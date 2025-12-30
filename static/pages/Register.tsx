@@ -3,16 +3,70 @@ import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Zap, User, Home, Thermometer, ArrowRight, ArrowLeft, Check } from 'lucide-react';
 import { useAuth } from '../App';
-import { mockUser } from '../services/mockData';
+import { authService } from '../services/auth';
 
 const Register: React.FC = () => {
   const [step, setStep] = useState(1);
   const { login } = useAuth();
   const navigate = useNavigate();
 
-  const handleComplete = () => {
-    login(mockUser);
-    navigate('/dashboard');
+  // State for form fields
+  const [formData, setFormData] = useState({
+    firstName: '',
+    lastName: '',
+    email: '',
+    password: '',
+    houseName: '',
+    address: '',
+    city: '',
+    country: '',
+    area: '',
+    yearBuilt: '',
+    heatingType: 'Heat Pump',
+    members: ''
+  });
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    setFormData({ ...formData, [e.target.type === 'number' ? 'value' : 'name']: e.target.value });
+    // Better handler needed for specific inputs, keeping it simple for now or manual binding
+  };
+
+  const handleComplete = async () => {
+    try {
+      // Register
+      await authService.register({
+        username: formData.email.split('@')[0], // derived username
+        email: formData.email,
+        password: formData.password,
+        first_name: formData.firstName,
+        last_name: formData.lastName,
+        house: {
+          house_name: formData.houseName,
+          address: formData.address,
+          city: formData.city,
+          country: formData.country,
+          area_sqm: parseInt(formData.area) || 0,
+          heating_type: formData.heatingType,
+          year_built: parseInt(formData.yearBuilt) || 2000,
+          household_members: parseInt(formData.members) || 1
+        }
+      });
+
+      // Auto login
+      const { user, token } = await authService.login({
+        email: formData.email,
+        password: formData.password
+      });
+
+      localStorage.setItem('token', token);
+      localStorage.setItem('user', JSON.stringify(user));
+      login(user); // context update
+      navigate('/dashboard');
+
+    } catch (err) {
+      console.error("Registration failed", err);
+      alert("Registration failed. Please check your details.");
+    }
   };
 
   const StepIndicator = () => (
@@ -38,9 +92,9 @@ const Register: React.FC = () => {
           </div>
           <h1 className="text-2xl font-bold text-gray-900">Create Your Account</h1>
           <p className="text-gray-500">Step {step} of 4: {
-            step === 1 ? 'Personal Information' : 
-            step === 2 ? 'House Location' : 
-            step === 3 ? 'Building Details' : 'Smart Meter Pairing'
+            step === 1 ? 'Personal Information' :
+              step === 2 ? 'House Location' :
+                step === 3 ? 'Building Details' : 'Smart Meter Pairing'
           }</p>
         </div>
 
@@ -52,20 +106,44 @@ const Register: React.FC = () => {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">First Name</label>
-                  <input type="text" className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none" placeholder="John" />
+                  <input
+                    type="text"
+                    value={formData.firstName}
+                    onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
+                    className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none"
+                    placeholder="John"
+                  />
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Last Name</label>
-                  <input type="text" className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none" placeholder="Doe" />
+                  <input
+                    type="text"
+                    value={formData.lastName}
+                    onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
+                    className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none"
+                    placeholder="Doe"
+                  />
                 </div>
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Email Address</label>
-                <input type="email" className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none" placeholder="john@example.com" />
+                <input
+                  type="email"
+                  value={formData.email}
+                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                  className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none"
+                  placeholder="john@example.com"
+                />
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Password</label>
-                <input type="password" className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none" placeholder="••••••••" />
+                <input
+                  type="password"
+                  value={formData.password}
+                  onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                  className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none"
+                  placeholder="••••••••"
+                />
               </div>
             </div>
           )}
@@ -74,20 +152,44 @@ const Register: React.FC = () => {
             <div className="space-y-6 animate-in slide-in-from-right duration-500">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">House Name</label>
-                <input type="text" className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none" placeholder="e.g. My Home" />
+                <input
+                  type="text"
+                  value={formData.houseName}
+                  onChange={(e) => setFormData({ ...formData, houseName: e.target.value })}
+                  className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none"
+                  placeholder="e.g. My Home"
+                />
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Street Address</label>
-                <input type="text" className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none" placeholder="Via Dante 10" />
+                <input
+                  type="text"
+                  value={formData.address}
+                  onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+                  className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none"
+                  placeholder="Via Dante 10"
+                />
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">City</label>
-                  <input type="text" className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none" placeholder="Milan" />
+                  <input
+                    type="text"
+                    value={formData.city}
+                    onChange={(e) => setFormData({ ...formData, city: e.target.value })}
+                    className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none"
+                    placeholder="Milan"
+                  />
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Country</label>
-                  <input type="text" className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none" placeholder="Italy" />
+                  <input
+                    type="text"
+                    value={formData.country}
+                    onChange={(e) => setFormData({ ...formData, country: e.target.value })}
+                    className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none"
+                    placeholder="Italy"
+                  />
                 </div>
               </div>
             </div>
@@ -98,16 +200,32 @@ const Register: React.FC = () => {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Area (sqm)</label>
-                  <input type="number" className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none" placeholder="100" />
+                  <input
+                    type="number"
+                    value={formData.area}
+                    onChange={(e) => setFormData({ ...formData, area: e.target.value })}
+                    className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none"
+                    placeholder="100"
+                  />
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Year Built</label>
-                  <input type="number" className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none" placeholder="2020" />
+                  <input
+                    type="number"
+                    value={formData.yearBuilt}
+                    onChange={(e) => setFormData({ ...formData, yearBuilt: e.target.value })}
+                    className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none"
+                    placeholder="2020"
+                  />
                 </div>
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Heating Type</label>
-                <select className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none appearance-none">
+                <select
+                  value={formData.heatingType}
+                  onChange={(e) => setFormData({ ...formData, heatingType: e.target.value })}
+                  className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none appearance-none"
+                >
                   <option>Heat Pump</option>
                   <option>Electric</option>
                   <option>Natural Gas</option>
@@ -116,7 +234,13 @@ const Register: React.FC = () => {
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Household Members</label>
-                <input type="number" className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none" placeholder="3" />
+                <input
+                  type="number"
+                  value={formData.members}
+                  onChange={(e) => setFormData({ ...formData, members: e.target.value })}
+                  className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none"
+                  placeholder="3"
+                />
               </div>
             </div>
           )}
@@ -144,7 +268,7 @@ const Register: React.FC = () => {
 
           <div className="mt-12 flex items-center justify-between">
             {step > 1 ? (
-              <button 
+              <button
                 onClick={() => setStep(step - 1)}
                 className="flex items-center gap-2 text-gray-600 font-semibold hover:text-gray-900 transition-colors"
               >
@@ -152,7 +276,7 @@ const Register: React.FC = () => {
               </button>
             ) : <div />}
 
-            <button 
+            <button
               onClick={() => step < 4 ? setStep(step + 1) : handleComplete()}
               className="flex items-center gap-2 px-6 py-3 bg-blue-600 text-white font-bold rounded-xl hover:bg-blue-700 transition-all shadow-md shadow-blue-100"
             >

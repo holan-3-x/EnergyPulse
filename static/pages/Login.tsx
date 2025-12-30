@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Zap, Mail, Lock, Loader2 } from 'lucide-react';
 import { useAuth } from '../App';
-import { mockUser, mockAdmin } from '../services/mockData';
+import { authService } from '../services/auth';
 
 const Login: React.FC = () => {
   const [email, setEmail] = useState('');
@@ -18,17 +18,28 @@ const Login: React.FC = () => {
     setIsLoading(true);
     setError('');
 
-    // Simulate network delay
-    setTimeout(() => {
-      if (email === 'admin@energypulse.ai') {
-        login(mockAdmin);
+    try {
+      const { token, user } = await authService.login({ email, password });
+
+      // Save to localStorage
+      localStorage.setItem('token', token);
+      localStorage.setItem('user', JSON.stringify(user));
+
+      // Update Context
+      login(user);
+
+      // Navigate based on role
+      if (user.role === 'admin') {
         navigate('/admin');
       } else {
-        login(mockUser);
         navigate('/dashboard');
       }
+    } catch (err: any) {
+      console.error(err);
+      setError('Invalid email or password. Please try again.');
+    } finally {
       setIsLoading(false);
-    }, 1000);
+    }
   };
 
   return (

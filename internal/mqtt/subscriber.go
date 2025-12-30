@@ -14,6 +14,7 @@ import (
 	"energy-prediction/internal/database"
 	"energy-prediction/internal/ml"
 	"energy-prediction/internal/models"
+
 	pahomqtt "github.com/eclipse/paho.mqtt.golang"
 )
 
@@ -42,7 +43,7 @@ func NewSubscriber() (*Client, error) {
 
 	topic := os.Getenv("MQTT_TOPIC")
 	if topic == "" {
-		topic = "energy/meters/+"  // + is wildcard for any meter
+		topic = "energy/meters/+" // + is wildcard for any meter
 	}
 
 	// Configure MQTT client options
@@ -85,22 +86,12 @@ func onConnectionLost(client pahomqtt.Client, err error) {
 	log.Printf("MQTT connection lost: %v", err)
 }
 
-// handleMeterData processes incoming messages from smart meters.
+// ProcessMeterData processes incoming meter data (from MQTT or HTTP).
 // This is the core handler that:
-// 1. Parses the meter data
-// 2. Uses ML to predict the energy price
-// 3. Logs the prediction to the blockchain
-// 4. Saves everything to the database
-func handleMeterData(client pahomqtt.Client, msg pahomqtt.Message) {
-	log.Printf("Received message from topic %s", msg.Topic())
-
-	// Parse meter data
-	var data MeterData
-	if err := json.Unmarshal(msg.Payload(), &data); err != nil {
-		log.Printf("Failed to parse meter data: %v", err)
-		return
-	}
-
+// 1. Uses ML to predict the energy price
+// 2. Logs the prediction to the blockchain
+// 3. Saves everything to the database
+func ProcessMeterData(data MeterData) {
 	// Find the household associated with this meter
 	var household models.Household
 	if err := database.DB.Where("meter_id = ?", data.MeterID).First(&household).Error; err != nil {
@@ -158,6 +149,20 @@ func handleMeterData(client pahomqtt.Client, msg pahomqtt.Message) {
 
 	log.Printf("✓ Prediction created: Meter=%s, Price=€%.4f, Confidence=%d%%",
 		data.MeterID, predictedPrice, confidence)
+}
+
+// handleMeterData processes incoming messages from smart meters via MQTT.
+func handleMeterData(client pahomqtt.Client, msg pahomqtt.Message) {
+	log.Printf("Received message from topic %s", msg.Topic())
+
+	// Parse meter data
+	var data MeterData
+	if err := json.Unmarshal(msg.Payload(), &data); err != nil {
+		log.Printf("Failed to parse meter data: %v", err)
+		return
+	}
+
+	ProcessMeterData(data)
 }
 
 // Disconnect cleanly closes the MQTT connection

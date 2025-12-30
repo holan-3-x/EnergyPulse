@@ -3,10 +3,12 @@
 package main
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"log"
 	"math/rand"
+	"net/http"
 	"os"
 	"os/signal"
 	"syscall"
@@ -57,9 +59,13 @@ func main() {
 	client := mqtt.NewClient(opts)
 	log.Printf("Connecting to MQTT broker: %s", brokerURL)
 
+	// Connect to broker (optional, fallback to HTTP)
 	token := client.Connect()
 	if token.Wait() && token.Error() != nil {
-		log.Fatalf("Failed to connect: %v", token.Error())
+		log.Printf("Warning: Failed to connect to MQTT: %v", token.Error())
+		log.Println("Will use HTTP simulation instead.")
+	} else {
+		log.Printf("✓ Connected to MQTT broker: %s", brokerURL)
 	}
 
 	// Set up graceful shutdown
@@ -109,15 +115,26 @@ func publishAllMeters(client mqtt.Client) {
 		}
 
 		// Publish to topic: energy/meters/{meterId}
-		topic := fmt.Sprintf("energy/meters/%s", meterID)
-		token := client.Publish(topic, 1, false, payload)
-		token.Wait()
+		if client.IsConnected() {
+			topic := fmt.Sprintf("energy/meters/%s", meterID)
+			token := client.Publish(topic, 1, false, payload)
+			token.Wait()
 
-		if token.Error() != nil {
-			log.Printf("Failed to publish to %s: %v", topic, token.Error())
+			if token.Error() != nil {
+				log.Printf("Failed to publish to %s: %v", topic, token.Error())
+			} else {
+				log.Printf("MQTT Published: %s -> %.2f kWh, %.1f°C", meterID, data.ConsumptionKwh, data.Temperature)
+			}
 		} else {
-			log.Printf("Published: %s -> %.2f kWh, %.1f°C, €%.4f/kWh",
-				meterID, data.ConsumptionKwh, data.Temperature, estimatePrice(hour, data.Temperature))
+			// Fallback: Send via HTTP
+			// Note: In production we'd put the URL in env var
+			resp, err := http.Post("http://localhost:8080/api/simulate", "application/json", bytes.NewBuffer(payload))
+			if err != nil {
+				log.Printf("HTTP Failed to send data for %s: %v", meterID, err)
+			} else {
+				resp.Body.Close()
+				log.Printf("HTTP Sent: %s -> %.2f kWh, %.1f°C", meterID, data.ConsumptionKwh, data.Temperature)
+			}
 		}
 	}
 	log.Println("---")

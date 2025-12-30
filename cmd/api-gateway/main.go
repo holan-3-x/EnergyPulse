@@ -14,6 +14,7 @@ import (
 	"energy-prediction/internal/database"
 	"energy-prediction/internal/handlers"
 	"energy-prediction/internal/mqtt"
+
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 )
@@ -145,6 +146,21 @@ func main() {
 		predGroup.GET("", handlers.GetPredictions)
 		predGroup.GET("/:prediction_id", handlers.GetPrediction)
 	}
+
+	// ========== Simulation Endpoint (Public - for Simulator) ==========
+	// This allows the simulator to send data via HTTP if MQTT is not available
+	router.POST("/api/simulate", func(c *gin.Context) {
+		var data mqtt.MeterData
+		if err := c.ShouldBindJSON(&data); err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			return
+		}
+
+		// Process the data as if it came from MQTT
+		mqtt.ProcessMeterData(data)
+
+		c.JSON(http.StatusOK, gin.H{"status": "received", "meterId": data.MeterID})
+	})
 
 	// Statistics endpoint
 	router.GET("/api/statistics", auth.JWTMiddleware(), handlers.GetStatistics)

@@ -1,11 +1,11 @@
 
 import React, { useMemo } from 'react';
-import { 
-  TrendingUp, 
-  TrendingDown, 
-  Plus, 
-  ArrowUpRight, 
-  Activity, 
+import {
+  TrendingUp,
+  TrendingDown,
+  Plus,
+  ArrowUpRight,
+  Activity,
   Calendar,
   ChevronRight,
   Zap,
@@ -13,25 +13,57 @@ import {
   ShieldCheck
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import { 
-  XAxis, 
-  YAxis, 
-  CartesianGrid, 
-  Tooltip, 
+import {
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
   ResponsiveContainer,
   AreaChart,
-  Area 
+  Area
 } from 'recharts';
-import { mockHouses, mockPredictions } from '../services/mockData';
+import { housesService } from '../services/houses';
+import { predictionsService } from '../services/predictions';
+import { Household, Prediction } from '../types';
 
 const Dashboard: React.FC = () => {
+  const [houses, setHouses] = React.useState<Household[]>([]);
+  const [predictions, setPredictions] = React.useState<Prediction[]>([]);
+  const [loading, setLoading] = React.useState(true);
+
+  React.useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const [h, p] = await Promise.all([
+          housesService.getHouses(),
+          predictionsService.getPredictions()
+        ]);
+        setHouses(h);
+        setPredictions(p);
+      } catch (err) {
+        console.error("Failed to fetch dashboard data", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchData();
+  }, []);
+
   const chartData = useMemo(() => {
-    return mockPredictions.slice(0, 12).map(p => ({
+    return predictions.slice(0, 12).map(p => ({
       time: new Date(p.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
       price: p.predictedPrice,
       consumption: p.consumptionKwh
     }));
-  }, []);
+  }, [predictions]);
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="animate-spin text-blue-600">Loading...</div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6 animate-in fade-in duration-700">
@@ -41,8 +73,8 @@ const Dashboard: React.FC = () => {
           <h1 className="text-2xl font-bold text-gray-900">Energy Overview</h1>
           <p className="text-gray-500">Here is what's happening with your households today.</p>
         </div>
-        <Link 
-          to="/register" 
+        <Link
+          to="/register"
           className="bg-blue-600 text-white px-4 py-2 rounded-xl text-sm font-bold flex items-center justify-center gap-2 hover:bg-blue-700 transition-all shadow-lg shadow-blue-100"
         >
           <Plus size={18} /> Add New House
@@ -91,14 +123,14 @@ const Dashboard: React.FC = () => {
               <AreaChart data={chartData}>
                 <defs>
                   <linearGradient id="colorPrice" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.1}/>
-                    <stop offset="95%" stopColor="#3b82f6" stopOpacity={0}/>
+                    <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.1} />
+                    <stop offset="95%" stopColor="#3b82f6" stopOpacity={0} />
                   </linearGradient>
                 </defs>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-                <XAxis dataKey="time" axisLine={false} tickLine={false} tick={{fontSize: 12, fill: '#64748b'}} />
-                <YAxis axisLine={false} tickLine={false} tick={{fontSize: 12, fill: '#64748b'}} />
-                <Tooltip 
+                <XAxis dataKey="time" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#64748b' }} />
+                <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#64748b' }} />
+                <Tooltip
                   contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}
                   labelStyle={{ fontWeight: 'bold', marginBottom: '4px' }}
                 />
@@ -115,26 +147,30 @@ const Dashboard: React.FC = () => {
             <Link to="/houses" className="text-xs font-bold text-blue-600 hover:text-blue-700">View All</Link>
           </div>
           <div className="space-y-4">
-            {mockHouses.map((house) => (
-              <Link 
-                key={house.id} 
-                to={`/houses/${house.id}`}
-                className="group flex items-center justify-between p-4 bg-gray-50 hover:bg-blue-50 rounded-xl border border-transparent hover:border-blue-100 transition-all"
-              >
-                <div className="flex items-center gap-4">
-                  <div className="w-10 h-10 bg-white rounded-lg flex items-center justify-center text-blue-600 border border-gray-100 shadow-sm">
-                    <Home size={20} />
+            <div className="space-y-4">
+              {houses.length === 0 ? (
+                <p className="text-sm text-gray-500 p-4 text-center">No houses added yet.</p>
+              ) : houses.map((house) => (
+                <Link
+                  key={house.id}
+                  to={`/houses/${house.id}`}
+                  className="group flex items-center justify-between p-4 bg-gray-50 hover:bg-blue-50 rounded-xl border border-transparent hover:border-blue-100 transition-all"
+                >
+                  <div className="flex items-center gap-4">
+                    <div className="w-10 h-10 bg-white rounded-lg flex items-center justify-center text-blue-600 border border-gray-100 shadow-sm">
+                      <Home size={20} />
+                    </div>
+                    <div>
+                      <h4 className="text-sm font-bold text-gray-900">{house.houseName}</h4>
+                      <p className="text-xs text-gray-500">{house.city}, {house.region}</p>
+                    </div>
                   </div>
-                  <div>
-                    <h4 className="text-sm font-bold text-gray-900">{house.houseName}</h4>
-                    <p className="text-xs text-gray-500">{house.city}, {house.region}</p>
-                  </div>
-                </div>
-                <ChevronRight size={18} className="text-gray-400 group-hover:text-blue-600 group-hover:translate-x-1 transition-all" />
-              </Link>
-            ))}
+                  <ChevronRight size={18} className="text-gray-400 group-hover:text-blue-600 group-hover:translate-x-1 transition-all" />
+                </Link>
+              ))}
+            </div>
           </div>
-          
+
           <div className="mt-8 p-4 bg-gradient-to-br from-blue-600 to-indigo-700 rounded-2xl text-white relative overflow-hidden">
             <div className="relative z-10">
               <p className="text-xs font-semibold opacity-80 mb-1">Blockchain Status</p>
