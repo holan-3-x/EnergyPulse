@@ -22,5 +22,4 @@ export const housesService = {
     async deleteHouse(id: string): Promise<void> {
         await api.delete(`/api/houses/${id}`);
     }
-}
 };

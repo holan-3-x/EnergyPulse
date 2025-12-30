@@ -34,22 +34,22 @@ const Register: React.FC = () => {
   const handleComplete = async () => {
     try {
       // Register
+      // Register
       await authService.register({
         username: formData.email.split('@')[0], // derived username
         email: formData.email,
         password: formData.password,
         first_name: formData.firstName,
         last_name: formData.lastName,
-        house: {
-          house_name: formData.houseName,
-          address: formData.address,
-          city: formData.city,
-          country: formData.country,
-          area_sqm: parseInt(formData.area) || 0,
-          heating_type: formData.heatingType,
-          year_built: parseInt(formData.yearBuilt) || 2000,
-          household_members: parseInt(formData.members) || 1
-        }
+        // House details flattened as per backend RegisterRequest
+        houseName: formData.houseName,
+        address: formData.address,
+        city: formData.city,
+        country: formData.country,
+        areaSqm: parseInt(formData.area) || 0,
+        heatingType: formData.heatingType,
+        yearBuilt: parseInt(formData.yearBuilt) || 2000,
+        members: parseInt(formData.members) || 1
       });
 
       // Auto login
