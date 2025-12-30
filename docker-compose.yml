@@ -1,0 +1,63 @@
+version: '3.8'
+
+# Docker Compose configuration for EnergyPulse
+# This runs all services needed for the energy prediction system
+
+services:
+  # MQTT Broker (Mosquitto)
+  mqtt:
+    image: eclipse-mosquitto:2
+    container_name: energypulse-mqtt
+    ports:
+      - "1883:1883"
+      - "9001:9001"
+    volumes:
+      - ./docker/mosquitto.conf:/mosquitto/config/mosquitto.conf
+    networks:
+      - energypulse-network
+    restart: unless-stopped
+
+  # API Gateway
+  api:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.api
+    container_name: energypulse-api
+    ports:
+      - "8080:8080"
+    environment:
+      - PORT=8080
+      - DB_PATH=/app/data/energy.db
+      - MQTT_BROKER=tcp://mqtt:1883
+      - MQTT_TOPIC=energy/meters/+
+      - JWT_SECRET=${JWT_SECRET:-energy-prediction-secret-key-2024}
+    volumes:
+      - ./data:/app/data
+      - ./static:/app/static
+    depends_on:
+      - mqtt
+    networks:
+      - energypulse-network
+    restart: unless-stopped
+
+  # Smart Meter Simulator
+  simulator:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.simulator
+    container_name: energypulse-simulator
+    environment:
+      - MQTT_BROKER=tcp://mqtt:1883
+    depends_on:
+      - mqtt
+      - api
+    networks:
+      - energypulse-network
+    restart: unless-stopped
+
+networks:
+  energypulse-network:
+    driver: bridge
+
+volumes:
+  data:

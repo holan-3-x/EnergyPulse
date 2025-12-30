@@ -1,0 +1,9 @@
+
+{
+  "name": "EnergyPulse - Prediction & Management System",
+  "description": "A production-ready energy price prediction dashboard featuring real-time MQTT simulation, ML-driven price forecasting, and blockchain verification links.",
+  "requestFramePermissions": [
+    "camera",
+    "microphone"
+  ]
+}

@@ -1,0 +1,364 @@
+================================================================================
+ENERGY PRICE PREDICTION SYSTEM - PROJECT OVERVIEW
+================================================================================
+
+QUICK SUMMARY (What You're Building)
+================================================================================
+
+A web application that:
+1. Lets users register with their house details
+2. Simulates 20 smart meters publishing energy data via MQTT
+3. Uses ML to predict hourly electricity prices
+4. Logs predictions on Ethereum blockchain (immutable proof)
+5. Shows real-time predictions on a React dashboard
+
+REQUIREMENTS AT A GLANCE
+================================================================================
+
+MUST HAVE:
+  ✓ User registration (with house details)
+  ✓ User login (JWT tokens, 24-hour valid)
+  ✓ Two roles: admin (sees all) + user (sees own)
+  ✓ House management (add/edit/delete)
+  ✓ MQTT: 20 smart meters sending data
+  ✓ ML: Price predictions (decision tree)
+  ✓ Blockchain: Ethereum smart contract
+  ✓ React frontend (registration, dashboard, predictions)
+  ✓ API: 18 REST endpoints
+  ✓ Database: 5 SQLite tables
+
+NICE TO HAVE:
+  • Real-time updates (WebSocket)
+  • Admin panel (system statistics)
+  • Blockchain verification badge
+  • Export predictions to CSV
+
+FILE STRUCTURE (CLEAN & SIMPLE)
+================================================================================
+
+energy-prediction/
+│
+├── cmd/                         [Entry points]
+│   ├── api-gateway/main.go      [API server - port 8080]
+│   ├── prediction-service/main.go [ML+Blockchain - port 8081]
+│   └── simulator/main.go         [MQTT simulator]
+│
+├── internal/                    [Go packages]
+│   ├── models/                  [Data structures]
+│   ├── database/                [SQLite CRUD]
+│   ├── auth/                    [JWT + bcrypt]
+│   ├── mqtt/                    [IoT messaging]
+│   ├── ml/                      [Decision tree]
+│   ├── blockchain/              [gRPC to Ethereum]
+│   ├── handlers/                [HTTP endpoints]
+│   └── utils/                   [Helpers]
+│
+├── frontend/                    [React app]
+│   ├── src/pages/               [8 pages]
+│   ├── src/components/          [UI components]
+│   ├── src/services/            [API calls]
+│   └── package.json
+│
+├── contracts/                   [Smart contract]
+│   └── EnergyPricePredictions.sol
+│
+├── tests/                       [Unit + integration]
+├── data/                        [DB + training data]
+├── docker/                      [Docker images]
+│
+├── docker-compose.yml           [Run everything]
+├── .env.example
+├── go.mod
+└── docs/                        [Documentation]
+    ├── API.md
+    ├── DATABASE.md
+    └── ARCHITECTURE.md
+
+DATABASE: 5 TABLES
+================================================================================
+
+users
+  → id, username, password_hash, email
+  → first_name, last_name, phone, role
+  → created_at
+
+households
+  → id, user_id, house_name, address, city
+  → heating_type, area_sqm, year_built, meter_id
+  → status (active/archived)
+
+predictions
+  → id, user_id, house_id, meter_id
+  → timestamp, hour, temperature, consumption_kwh
+  → predicted_price, confidence
+  → blockchain_tx, blockchain_confirmed
+
+sessions
+  → id, user_id, token, expires_at
+
+blockchain_log
+  → id, prediction_id, transaction_hash, block_number
+
+API ENDPOINTS: 18 TOTAL
+================================================================================
+
+Auth (4):
+  POST   /auth/register           [Create account with house]
+  POST   /auth/login              [Get JWT token]
+  POST   /auth/logout             [Invalidate token]
+  POST   /auth/refresh            [New token]
+
+User (3):
+  GET    /api/user/profile        [Get user info]
+  PUT    /api/user/profile        [Edit profile]
+  PUT    /api/user/password       [Change password]
+
+Houses (5):
+  POST   /api/houses              [Create house]
+  GET    /api/houses              [List houses]
+  GET    /api/houses/:id          [Get one house]
+  PUT    /api/houses/:id          [Edit house]
+  DELETE /api/houses/:id          [Archive house]
+
+Predictions (3):
+  GET    /api/predictions         [Get predictions]
+  GET    /api/predictions/:id     [Get one]
+  GET    /api/statistics          [Get stats]
+
+Admin (3):
+  GET    /admin/users             [List all users]
+  PUT    /admin/users/:id/role    [Change role]
+  GET    /admin/dashboard         [System stats]
+
+Health (2):
+  GET    /health
+  GET    /status
+
+TECH STACK (ALIGNED TO LECTURES)
+================================================================================
+
+Lecture Topic         Your Usage              Technology
+─────────────────────────────────────────────────────────────
+MQTT in Go            Smart meters            Paho MQTT + Mosquitto
+REST API              User + House + Predict  Gin + Go
+gRPC                  Blockchain calls        gRPC + protobuf
+Blockchain            Immutable logging       Solidity + Ganache
+Network Programming   All communication       TCP, MQTT, HTTP, gRPC
+Authentication        Secure login            JWT + bcrypt
+Real-time             Dashboard updates       WebSocket
+Microservices         Scalable design         2 independent Go services
+
+REACT FRONTEND: 8 PAGES
+================================================================================
+
+1. Landing          → Login/Register buttons
+2. Register (4 steps) → User info + House details
+3. Login            → Username/Password
+4. Dashboard        → House cards + Latest predictions
+5. House Details    → Consumption graph + History
+6. Predictions      → Table with filters + Details
+7. Profile          → User info + Settings
+8. Admin Dashboard  → System stats + User management
+
+DEVELOPMENT TIMELINE (REALISTIC)
+================================================================================
+
+WEEK 1 (Database + Auth)
+  Day 1  → Go setup + database schema
+  Day 2  → User model + registration
+  Day 3  → JWT tokens + login
+  Day 4  → User profile endpoints
+  Day 5  → Testing + error handling
+
+WEEK 2 (Houses + Predictions)
+  Day 6  → House model + CRUD
+  Day 7  → House endpoints
+  Day 8  → Prediction model + database
+  Day 9  → Prediction endpoints + stats
+  Day 10 → Admin endpoints
+
+WEEK 3 (IoT + ML)
+  Day 11 → MQTT simulator (20 meters)
+  Day 12 → MQTT subscriber in backend
+  Day 13 → Decision tree model
+  Day 14 → ML integration
+  Day 15 → Real-time updates (WebSocket)
+
+WEEK 4 (Blockchain + Frontend)
+  Day 16 → Smart contract + Ganache
+  Day 17 → gRPC client
+  Day 18 → React setup + pages
+  Day 19 → Frontend integration
+  Day 20 → API integration
+
+WEEK 5 (Testing + Polish)
+  Day 21 → Unit tests
+  Day 22 → Integration tests
+  Day 23 → Documentation
+  Day 24 → Final testing
+  Day 25 → Demo preparation
+
+TOTAL: 25 DAYS @ 3-4 HOURS/DAY = 75-100 HOURS
+
+KEY METRICS
+================================================================================
+
+Lines of Code:       ~3000-4000 (Go) + ~2000 (React)
+Go Files:            ~15-20 files
+React Components:    ~20-25 components
+Database Tables:     5 tables
+API Endpoints:       18 endpoints
+Smart Contract:      ~200 lines (Solidity)
+MQTT Meters:         20 households
+Frontend Pages:      8 pages
+Tests:               30+ unit/integration tests
+
+SCOPE: NOT TOO SIMPLE, NOT TOO COMPLEX
+================================================================================
+
+TOO SIMPLE WOULD BE:
+  ✗ Just REST API without MQTT
+  ✗ Hardcoded predictions (no ML)
+  ✗ No blockchain
+  ✗ No frontend
+  ✗ Single table database
+
+YOUR PROJECT (BALANCED):
+  ✓ Real MQTT IoT simulation
+  ✓ Real ML model (decision tree)
+  ✓ Real blockchain integration
+  ✓ Complete React frontend
+  ✓ Proper database schema
+  ✓ Microservices architecture
+  ✓ 18 REST endpoints
+  ✓ Real-time updates
+  ✓ Authentication + authorization
+
+TOO COMPLEX WOULD BE:
+  ✗ 100+ endpoints
+  ✗ Deep learning (neural networks)
+  ✗ Real Ethereum network
+  ✗ Multiple databases
+  ✗ Multiple languages
+  ✗ Kubernetes deployment
+
+WHY THIS IS PERFECT FOR EXAM
+================================================================================
+
+✓ Shows all course topics
+  → MQTT (IoT)
+  → REST (Web services)
+  → gRPC (RPC)
+  → Blockchain
+  → Network programming
+  → Authentication
+  → Microservices
+
+✓ Production-ready code
+  → Clean structure
+  → Error handling
+  → Secure
+  → Tested
+
+✓ Complete system
+  → Frontend + Backend
+  → Database
+  → IoT simulation
+  → ML model
+  → Blockchain
+
+✓ Balanced complexity
+  → Not toy project (too simple)
+  → Not overwhelming (too complex)
+  → Achievable in time
+  → Impressive portfolio
+
+✓ Real-world deployable
+  → Docker-ready
+  → Documented
+  → Scalable architecture
+  → Can be extended
+
+DELIVERABLES FOR PROFESSOR
+================================================================================
+
+CODE:
+  ✓ Go API Gateway service
+  ✓ Go Prediction Service
+  ✓ React frontend (8 pages)
+  ✓ Smart contract (Solidity)
+  ✓ MQTT simulator
+  ✓ Unit + integration tests
+  ✓ docker-compose.yml
+
+DOCUMENTATION:
+  ✓ README.md (setup + running)
+  ✓ API.md (all 18 endpoints)
+  ✓ DATABASE.md (5 tables)
+  ✓ ARCHITECTURE.md (system design)
+  ✓ MQTT.md (data flow)
+  ✓ ML.md (model details)
+  ✓ BLOCKCHAIN.md (contract)
+
+PROOF OF WORKING:
+  ✓ Code compiles
+  ✓ Tests pass
+  ✓ API endpoints work (curl)
+  ✓ Database operations work
+  ✓ Frontend displays correctly
+  ✓ MQTT data flows
+  ✓ ML makes predictions
+  ✓ Blockchain logs transactions
+
+HOW TO START
+================================================================================
+
+1. Read BRIEF_REQUIREMENTS_AND_STRUCTURE.md (this file)
+2. Read PRODUCTION_READY_SPECIFICATION.md (detailed spec)
+3. Create project structure (folders only)
+4. Start Week 1: Database + Auth
+5. Follow timeline (25 days)
+6. Test frequently
+7. Document as you go
+8. Demo to professor
+
+FILES PROVIDED
+================================================================================
+
+1. BRIEF_REQUIREMENTS_AND_STRUCTURE.md ← START HERE
+   → Requirements + file structure
+
+2. PRODUCTION_READY_SPECIFICATION.md
+   → Complete detailed specification
+
+3. IMPLEMENTATION_GUIDE.md
+   → Step-by-step code examples
+
+4. README_START_HERE.md
+   → How to organize your work
+
+5. PROJECT_OVERVIEW.txt (this file)
+   → Visual overview
+
+6. EXAM_QUICK_START.txt
+   → Quick reference
+
+7. FINAL_SUMMARY.txt
+   → TL;DR summary
+
+NEXT STEPS
+================================================================================
+
+1. ✓ Read BRIEF_REQUIREMENTS_AND_STRUCTURE.md
+2. → Understand the system
+3. → Create folder structure
+4. → Create go.mod file
+5. → Start Week 1: Database
+
+Estimated time to first working code: 3-5 days
+Estimated time to first API endpoint: 1 week
+Estimated time to complete MVP: 25 days
+
+You've got this! Let's build! 💪
+
+================================================================================
