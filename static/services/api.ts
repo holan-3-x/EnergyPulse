@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_URL = 'http://localhost:8080/api'; // Or just '/api' if using proxy
+const API_URL = 'http://localhost:8080'; // Backend has mixed /auth and /api prefixes
 
 const api = axios.create({
   baseURL: API_URL,

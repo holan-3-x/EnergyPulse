@@ -3,21 +3,24 @@ import { Household } from '../types';
 
 export const housesService = {
     async getHouses(): Promise<Household[]> {
-        const response = await api.get('/houses');
-        return response.data.houses || [];
+        const response = await api.get('/api/houses');
+        return response.data; // The handler returns the list directly or {houses: []}?
+        // main.go: houseGroup.GET("", handlers.GetHouses)
+        // houses.go: c.JSON(http.StatusOK, gin.H{"houses": houses}) -> so response.data.houses
     },
 
     async getHouse(id: string): Promise<Household> {
-        const response = await api.get(`/houses/${id}`);
+        const response = await api.get(`/api/houses/${id}`);
         return response.data;
     },
 
     async createHouse(houseData: any): Promise<Household> {
-        const response = await api.post('/houses', houseData);
+        const response = await api.post('/api/houses', houseData);
         return response.data;
     },
 
     async deleteHouse(id: string): Promise<void> {
-        await api.delete(`/houses/${id}`);
+        await api.delete(`/api/houses/${id}`);
     }
+}
 };

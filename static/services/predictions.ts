@@ -3,17 +3,17 @@ import { Prediction } from '../types';
 
 export const predictionsService = {
     async getPredictions(): Promise<Prediction[]> {
-        const response = await api.get('/predictions');
+        const response = await api.get('/api/predictions');
         return response.data.predictions || [];
     },
 
     async getPrediction(id: string): Promise<Prediction> {
-        const response = await api.get(`/predictions/${id}`);
+        const response = await api.get(`/api/predictions/${id}`);
         return response.data;
     },
 
     async getStatistics(): Promise<any> {
-        const response = await api.get('/statistics');
+        const response = await api.get('/api/statistics');
         return response.data;
     }
 };
