@@ -105,9 +105,13 @@ const AdminDash: React.FC = () => {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         {[
           { label: 'Total Active Users', value: data?.totalUsers || 0, icon: Users, color: 'text-blue-600', bg: 'bg-blue-50' },
-          { label: 'Registered Houses', value: data?.totalHouseholds || 0, icon: Globe, color: 'text-green-600', bg: 'bg-green-50' },
-          { label: 'Predictions (Total)', value: data?.totalPredictions || 0, icon: Cpu, color: 'text-purple-600', bg: 'bg-purple-50' },
-          { label: 'Active Sessions', value: data?.activeSessions || 0, icon: Database, color: 'text-orange-600', bg: 'bg-orange-50' }
+          { label: 'Active Houses', value: data?.totalHouseholds || 0, icon: Globe, color: 'text-green-600', bg: 'bg-green-50' },
+          { label: 'Total Predictions', value: data?.totalPredictions || 0, icon: Cpu, color: 'text-purple-600', bg: 'bg-purple-50' },
+          { label: 'Active Sessions', value: data?.activeSessions || 0, icon: Database, color: 'text-orange-600', bg: 'bg-orange-50' },
+          { label: 'Avg Accuracy', value: `${(data?.averageAccuracy || 0).toFixed(1)}%`, icon: TrendingUp, color: 'text-emerald-600', bg: 'bg-emerald-50' },
+          { label: 'Total Energy (kWh)', value: (data?.totalEnergyConsumed || 0).toFixed(0), icon: Cpu, color: 'text-amber-600', bg: 'bg-amber-50' },
+          { label: 'Peak Hour', value: `${data?.peakUsageHour || 0}:00`, icon: Server, color: 'text-indigo-600', bg: 'bg-indigo-50' },
+          { label: 'Pending Blockchain', value: data?.pendingBlockchain || 0, icon: Database, color: 'text-rose-600', bg: 'bg-rose-50' }
         ].map((stat, i) => (
           <div key={i} className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm">
             <div className={`w-10 h-10 ${stat.bg} ${stat.color} rounded-lg flex items-center justify-center mb-4`}>
@@ -235,6 +239,33 @@ const AdminDash: React.FC = () => {
                 <p className="text-xs text-gray-500 text-center py-4">No recent predictions found.</p>
               )}
             </div>
+          </div>
+
+          <div className="bg-gradient-to-br from-indigo-600 to-purple-700 p-6 rounded-2xl text-white relative overflow-hidden shadow-lg">
+            <div className="relative z-10">
+              <h3 className="font-bold mb-4 flex items-center gap-2">
+                <TrendingUp size={18} /> Extended Analytics
+              </h3>
+              <div className="space-y-3">
+                <div className="flex justify-between items-center">
+                  <span className="text-xs opacity-80">Avg Daily Predictions</span>
+                  <span className="text-sm font-bold">{(data?.avgDailyPredictions || 0).toFixed(1)}</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-xs opacity-80">New Users Today</span>
+                  <span className="text-sm font-bold">{data?.newUsersToday || 0}</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-xs opacity-80">Archived Houses</span>
+                  <span className="text-sm font-bold">{data?.archivedHouseholds || 0}</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-xs opacity-80">Blockchain Confirmed</span>
+                  <span className="text-sm font-bold">{data?.blockchainConfirmed || 0}</span>
+                </div>
+              </div>
+            </div>
+            <Cpu size={80} className="absolute -right-4 -bottom-4 opacity-10" />
           </div>
 
           <div className="bg-red-600 p-6 rounded-2xl text-white relative overflow-hidden shadow-lg shadow-red-100">

@@ -10,6 +10,15 @@ export interface AdminDashboardData {
     recentPredictions: Prediction[];
     systemHealth: string;
     serviceStatus: Record<string, string>;
+    // Extended Analytics
+    averageAccuracy: number;
+    totalEnergyConsumed: number;
+    peakUsageHour: number;
+    avgDailyPredictions: number;
+    systemUptime: string;
+    newUsersToday: number;
+    archivedHouseholds: number;
+    pendingBlockchain: number;
 }
 
 export const adminService = {

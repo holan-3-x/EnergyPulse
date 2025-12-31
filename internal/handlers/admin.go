@@ -115,5 +115,41 @@ func AdminDashboard(c *gin.Context) {
 		response.ServiceStatus["mqtt"] = "error"
 	}
 
+	// Extended Analytics
+	// Average accuracy from predictions
+	var avgAccuracy float64
+	database.DB.Model(&models.Prediction{}).Select("COALESCE(AVG(100 - ABS(predicted_price - actual_price) / NULLIF(actual_price, 0.001) * 100), 0)").Scan(&avgAccuracy)
+	response.AverageAccuracy = avgAccuracy
+
+	// Total energy consumed
+	var totalEnergy float64
+	database.DB.Model(&models.Prediction{}).Select("COALESCE(SUM(consumption_kwh), 0)").Scan(&totalEnergy)
+	response.TotalEnergyConsumed = totalEnergy
+
+	// Peak usage hour (hour with most predictions)
+	var peakHour struct {
+		Hour  int
+		Count int64
+	}
+	database.DB.Model(&models.Prediction{}).Select("hour, COUNT(*) as count").Group("hour").Order("count DESC").Limit(1).Scan(&peakHour)
+	response.PeakUsageHour = peakHour.Hour
+
+	// Average daily predictions (last 7 days)
+	var last7DaysCount int64
+	database.DB.Model(&models.Prediction{}).Where("created_at > datetime('now', '-7 days')").Count(&last7DaysCount)
+	response.AvgDailyPredictions = float64(last7DaysCount) / 7.0
+
+	// System uptime (simulated - in production would use actual process uptime)
+	response.SystemUptime = "Running since startup"
+
+	// New users today
+	database.DB.Model(&models.User{}).Where("DATE(created_at) = DATE('now')").Count(&response.NewUsersToday)
+
+	// Archived households
+	database.DB.Model(&models.Household{}).Where("status = ?", models.StatusArchived).Count(&response.ArchivedHouseholds)
+
+	// Pending blockchain confirmations
+	database.DB.Model(&models.Prediction{}).Where("blockchain_confirmed = ?", false).Count(&response.PendingBlockchain)
+
 	c.JSON(http.StatusOK, response)
 }

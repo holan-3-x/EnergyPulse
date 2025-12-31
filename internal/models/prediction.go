@@ -150,4 +150,13 @@ type AdminDashboardResponse struct {
 	RecentPredictions   []PredictionResponse `json:"recentPredictions"`
 	SystemHealth        string               `json:"systemHealth"`
 	ServiceStatus       map[string]string    `json:"serviceStatus"`
+	// Extended Analytics
+	AverageAccuracy     float64 `json:"averageAccuracy"`
+	TotalEnergyConsumed float64 `json:"totalEnergyConsumed"`
+	PeakUsageHour       int     `json:"peakUsageHour"`
+	AvgDailyPredictions float64 `json:"avgDailyPredictions"`
+	SystemUptime        string  `json:"systemUptime"`
+	NewUsersToday       int64   `json:"newUsersToday"`
+	ArchivedHouseholds  int64   `json:"archivedHouseholds"`
+	PendingBlockchain   int64   `json:"pendingBlockchain"`
 }
