@@ -180,6 +180,12 @@ func main() {
 
 	// SPA Routing: Serve index.html for any unknown route (except /api and /auth)
 	router.NoRoute(func(c *gin.Context) {
+		// If the request is for an API or Auth endpoint, return 404 instead of HTML
+		path := c.Request.URL.Path
+		if len(path) >= 4 && (path[:4] == "/api" || (len(path) >= 5 && path[:5] == "/auth") || (len(path) >= 6 && path[:6] == "/admin")) {
+			c.JSON(http.StatusNotFound, gin.H{"error": "API route not found: " + path})
+			return
+		}
 		c.File("./static/index.html")
 	})
 

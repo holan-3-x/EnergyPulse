@@ -15,8 +15,12 @@ const WeatherWidget: React.FC<WeatherWidgetProps> = ({ city = "Milano" }) => {
         const fetchWeather = async () => {
             try {
                 const data = await weatherService.getWeather(city);
-                console.log("Weather Fetch Success:", data);
-                setWeather(data);
+                console.log("Weather Fetch Result:", data);
+                if (data && typeof data === 'object' && !data.error && typeof data.temperature !== 'undefined') {
+                    setWeather(data);
+                } else {
+                    console.warn("Invalid weather data received:", data);
+                }
             } catch (err) {
                 console.error("Weather fetch failed:", err);
             } finally {

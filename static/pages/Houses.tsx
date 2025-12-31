@@ -164,14 +164,14 @@ const Houses: React.FC = () => {
     };
 
     const handleDelete = async (houseId: string) => {
-        if (!confirm('Are you sure you want to delete this house?')) return;
-
+        setError('');
         try {
             await housesService.deleteHouse(houseId);
-            await fetchHouses();
-        } catch (err) {
+            // Immediately update local state for instant feedback
+            setHouses(prev => prev.filter(h => h.id !== houseId));
+        } catch (err: any) {
             console.error('Failed to delete house:', err);
-            setError('Error during deletion');
+            setError(err.response?.data?.error || 'Failed to archive property. Please try again.');
         }
     };
 
@@ -433,6 +433,16 @@ const Houses: React.FC = () => {
                                         <MapPin size={12} />
                                         <span>{house.city}, {house.region}</span>
                                     </div>
+                                    {isAdmin && (house.ownerName || house.userEmail) && (
+                                        <div className="mt-3 p-3 bg-indigo-50 rounded-xl border border-indigo-100">
+                                            <div className="flex items-center gap-2 mb-1">
+                                                <UserIcon size={12} className="text-indigo-500" />
+                                                <span className="text-[10px] font-bold uppercase tracking-wider text-indigo-400">Property Owner</span>
+                                            </div>
+                                            <p className="text-sm font-bold text-indigo-700">{house.ownerName || 'Unknown'}</p>
+                                            <p className="text-[11px] text-indigo-500">{house.userEmail || 'No email'}</p>
+                                        </div>
+                                    )}
                                 </div>
 
                                 <div className="grid grid-cols-2 gap-4 mb-8">

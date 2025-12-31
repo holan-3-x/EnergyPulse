@@ -39,10 +39,10 @@ const Dashboard: React.FC = () => {
       try {
         const [h, p] = await Promise.all([
           housesService.getHouses(),
-          predictionsService.getPredictions()
+          predictionsService.getPredictions({ limit: 50 }) // Get enough for stats
         ]);
         setHouses(h);
-        setPredictions(p);
+        setPredictions(p.predictions || []);
       } catch (err) {
         console.error("Failed to fetch dashboard data", err);
       } finally {
@@ -53,10 +53,14 @@ const Dashboard: React.FC = () => {
   }, []);
 
   const chartData = useMemo(() => {
-    return predictions.slice(0, 12).map(p => ({
+    // Explicitly check if predictions is an array before any operation
+    const predArray = Array.isArray(predictions) ? predictions : [];
+    if (predArray.length === 0) return [];
+
+    return predArray.slice(0, 12).map(p => ({
       time: new Date(p.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-      price: p.predictedPrice,
-      consumption: p.consumptionKwh
+      price: p.predictedPrice || 0,
+      consumption: p.consumptionKwh || 0
     }));
   }, [predictions]);
 
@@ -87,11 +91,12 @@ const Dashboard: React.FC = () => {
       {/* Stats Grid */}
       {(() => {
         // Compute real stats from data
-        const totalConsumption = predictions.reduce((sum, p) => sum + p.consumptionKwh, 0);
-        const avgPrice = predictions.length > 0
-          ? predictions.reduce((sum, p) => sum + p.predictedPrice, 0) / predictions.length
+        const validPredictions = Array.isArray(predictions) ? predictions : [];
+        const totalConsumption = validPredictions.reduce((sum, p) => sum + p.consumptionKwh, 0);
+        const avgPrice = validPredictions.length > 0
+          ? validPredictions.reduce((sum, p) => sum + p.predictedPrice, 0) / validPredictions.length
           : 0;
-        const monthlyEst = avgPrice * 24 * 30 * (totalConsumption / Math.max(predictions.length, 1));
+        const monthlyEst = avgPrice * 24 * 30 * (totalConsumption / Math.max(validPredictions.length, 1));
         const activeMeters = houses.length;
 
         const stats = [
@@ -179,10 +184,13 @@ const Dashboard: React.FC = () => {
                     </div>
                     <div>
                       <h4 className="text-sm font-bold text-gray-900">{house.houseName}</h4>
-                      {isAdmin && house.ownerName && (
-                        <p className="text-[10px] text-blue-600 font-bold">Owner: {house.ownerName}</p>
-                      )}
-                      <p className="text-xs text-gray-500">{house.city}, {house.region}</p>
+                      <div className="flex flex-wrap items-center gap-2 mt-1">
+                        <span className="px-2 py-0.5 bg-gray-100 rounded text-[9px] font-mono text-gray-400">ID: {house.id}</span>
+                        {isAdmin && house.ownerName && (
+                          <span className="text-[10px] text-indigo-600 font-bold uppercase tracking-tighter">Owner (ID: {house.userId}): {house.ownerName}</span>
+                        )}
+                      </div>
+                      <p className="text-xs text-gray-500 mt-0.5">{house.city}, {house.region}</p>
                     </div>
                   </div>
                   <ChevronRight size={18} className="text-gray-400 group-hover:text-blue-600 group-hover:translate-x-1 transition-all" />
@@ -195,7 +203,7 @@ const Dashboard: React.FC = () => {
             <div className="relative z-10">
               <p className="text-xs font-semibold opacity-80 mb-1">Blockchain Status</p>
               <h4 className="font-bold mb-3">
-                {predictions.filter(p => p.blockchainConfirmed).length} Predictions Verified
+                {Array.isArray(predictions) ? predictions.filter(p => p.blockchainConfirmed).length : 0} Predictions Verified
               </h4>
               <div className="flex items-center gap-2 text-[10px] bg-white/10 w-fit px-2 py-1 rounded-full">
                 <ShieldCheck size={12} /> Local Node Operational

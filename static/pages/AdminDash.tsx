@@ -47,26 +47,23 @@ const AdminDash: React.FC = () => {
   const handleRoleChange = async (userId: number, currentRole: string) => {
     const roleToSet = String(currentRole).toLowerCase() === 'admin' ? UserRole.USER : UserRole.ADMIN;
 
-    console.log(`Attempting to change role for user ${userId} from ${currentRole} to ${roleToSet}`);
-
-    if (!confirm(`Are you sure you want to change this user's role to ${roleToSet}?`)) {
-      console.log("Role change cancelled by user");
-      return;
-    }
+    console.log(`Changing role for user ${userId} from ${currentRole} to ${roleToSet}`);
 
     setUpdatingUserId(userId);
+    setMessage(null);
     try {
       await adminService.changeUserRole(userId, roleToSet);
       console.log("Role change successful");
       setMessage({ type: 'success', text: `User role successfully updated to ${roleToSet}!` });
-      await fetchData(); // Refresh data
+      // Immediately update local state for instant feedback
+      setUsers(prev => prev.map(u => u.id === userId ? { ...u, role: roleToSet } : u));
     } catch (err: any) {
       console.error("Failed to update role:", err);
       const errorMsg = err.response?.data?.error || err.message || 'Unknown error';
       setMessage({ type: 'error', text: `Failed to update user role: ${errorMsg}` });
     } finally {
       setUpdatingUserId(null);
-      setTimeout(() => setMessage(null), 3000);
+      setTimeout(() => setMessage(null), 5000);
     }
   };
 

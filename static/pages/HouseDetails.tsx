@@ -63,7 +63,8 @@ const HouseDetails: React.FC = () => {
         ]);
 
         setHouse(h);
-        setHistory(p || []);
+        // Extract predictions array from paginated response
+        setHistory(p?.predictions || []);
         setForecast(f || []);
       } catch (err: any) {
         console.error("Failed to fetch node data:", err);
@@ -139,8 +140,10 @@ const HouseDetails: React.FC = () => {
             <ArrowLeft size={14} /> Back to Smart Fleet
           </Link>
           <h1 className="text-4xl font-black text-gray-901 tracking-tighter">{house.houseName}</h1>
-          <div className="flex items-center gap-4 text-xs text-gray-400 font-bold">
+          <div className="flex flex-wrap items-center gap-4 text-xs text-gray-400 font-bold">
             <div className="flex items-center gap-1.5"><MapPin size={14} className="text-indigo-500" /> {house.city}</div>
+            <div className="flex items-center gap-1.5 font-mono bg-gray-50 px-2 py-0.5 rounded text-[10px]">House ID: {house.id}</div>
+            {isAdmin && <div className="flex items-center gap-1.5 font-mono bg-indigo-50 text-indigo-600 px-2 py-0.5 rounded text-[10px]">Owner ID: {house.userId}</div>}
             <div className="flex items-center gap-1.5"><TrendingUp size={14} className="text-green-500" /> Meter Active</div>
           </div>
         </div>
