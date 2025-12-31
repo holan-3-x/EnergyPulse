@@ -5,6 +5,7 @@ import (
 
 	"energy-prediction/internal/auth"
 	"energy-prediction/internal/database"
+	"energy-prediction/internal/ml"
 	"energy-prediction/internal/models"
 
 	"github.com/gin-gonic/gin"
@@ -193,4 +194,19 @@ func DeleteHouse(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{"message": "House archived successfully"})
+}
+
+// GetForecast returns a 24-hour price forecast for a house.
+// GET /api/houses/:house_id/forecast
+func GetForecast(c *gin.Context) {
+	houseID := c.Param("house_id")
+	var house models.Household
+	if err := database.DB.Where("id = ?", houseID).First(&house).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "House not found"})
+		return
+	}
+
+	// For current temp in forecast start, we'll try to get it from weather service if possible
+	forecast := ml.Get24HourForecast(&house, 15.0)
+	c.JSON(http.StatusOK, forecast)
 }

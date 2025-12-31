@@ -26,5 +26,10 @@ export const housesService = {
 
     async deleteHouse(id: string): Promise<void> {
         await api.delete(`/api/houses/${id}`);
+    },
+
+    async getForecast(id: string): Promise<any[]> {
+        const response = await api.get(`/api/houses/${id}/forecast`);
+        return response.data;
     }
 };

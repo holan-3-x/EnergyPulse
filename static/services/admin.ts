@@ -9,6 +9,7 @@ export interface AdminDashboardData {
     blockchainConfirmed: number;
     recentPredictions: Prediction[];
     systemHealth: string;
+    serviceStatus: Record<string, string>;
 }
 
 export const adminService = {

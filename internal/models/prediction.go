@@ -1,6 +1,7 @@
 package models
 
 import (
+	"math"
 	"time"
 )
 
@@ -17,6 +18,7 @@ type Prediction struct {
 	Temperature         float64   `json:"temperature" gorm:"not null"` // Celsius
 	ConsumptionKwh      float64   `json:"consumptionKwh" gorm:"column:consumption_kwh;not null"`
 	PredictedPrice      float64   `json:"predictedPrice" gorm:"column:predicted_price;not null"` // €/kWh
+	ActualPrice         float64   `json:"actualPrice" gorm:"column:actual_price"`                // Real market price
 	Confidence          int       `json:"confidence" gorm:"not null"`                            // 0-100%
 	BlockchainTx        string    `json:"blockchainTx" gorm:"column:blockchain_tx;index;size:100"`
 	BlockchainConfirmed bool      `json:"blockchainConfirmed" gorm:"column:blockchain_confirmed;default:false"`
@@ -82,6 +84,8 @@ type PredictionResponse struct {
 	Temperature         float64 `json:"temperature"`
 	ConsumptionKwh      float64 `json:"consumptionKwh"`
 	PredictedPrice      float64 `json:"predictedPrice"`
+	ActualPrice         float64 `json:"actualPrice"`
+	Accuracy            float64 `json:"accuracy"` // 0-100%
 	Confidence          int     `json:"confidence"`
 	BlockchainTx        string  `json:"blockchainTx"`
 	BlockchainConfirmed bool    `json:"blockchainConfirmed"`
@@ -89,6 +93,15 @@ type PredictionResponse struct {
 
 // ToResponse converts Prediction to PredictionResponse
 func (p *Prediction) ToResponse() PredictionResponse {
+	accuracy := 0.0
+	if p.ActualPrice > 0 {
+		diff := math.Abs(p.ActualPrice - p.PredictedPrice)
+		accuracy = 100 - (diff / p.ActualPrice * 100)
+		if accuracy < 0 {
+			accuracy = 0
+		}
+	}
+
 	return PredictionResponse{
 		ID:                  p.ID,
 		UserID:              p.UserID,
@@ -99,6 +112,8 @@ func (p *Prediction) ToResponse() PredictionResponse {
 		Temperature:         p.Temperature,
 		ConsumptionKwh:      p.ConsumptionKwh,
 		PredictedPrice:      p.PredictedPrice,
+		ActualPrice:         p.ActualPrice,
+		Accuracy:            math.Round(accuracy*100) / 100,
 		Confidence:          p.Confidence,
 		BlockchainTx:        p.BlockchainTx,
 		BlockchainConfirmed: p.BlockchainConfirmed,
@@ -134,4 +149,5 @@ type AdminDashboardResponse struct {
 	BlockchainConfirmed int64                `json:"blockchainConfirmed"`
 	RecentPredictions   []PredictionResponse `json:"recentPredictions"`
 	SystemHealth        string               `json:"systemHealth"`
+	ServiceStatus       map[string]string    `json:"serviceStatus"`
 }

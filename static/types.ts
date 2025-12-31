@@ -5,7 +5,7 @@ export enum UserRole {
 }
 
 export interface User {
-  id: string;
+  id: number;
   username: string;
   email: string;
   firstName: string;
@@ -17,7 +17,7 @@ export interface User {
 
 export interface Household {
   id: string;
-  userId: string;
+  userId: number;
   houseName: string;
   address: string;
   city: string;
@@ -35,8 +35,8 @@ export interface Household {
 }
 
 export interface Prediction {
-  id: string;
-  userId: string;
+  id: number;
+  userId: number;
   houseId: string;
   meterId: string;
   timestamp: string;
@@ -44,6 +44,8 @@ export interface Prediction {
   temperature: number;
   consumptionKwh: number;
   predictedPrice: number;
+  actualPrice: number;
+  accuracy: number;
   confidence: number;
   blockchainTx: string;
   blockchainConfirmed: boolean;

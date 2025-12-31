@@ -23,6 +23,7 @@ import Houses from './pages/Houses';
 import Predictions from './pages/Predictions';
 import Profile from './pages/Profile';
 import AdminDash from './pages/AdminDash';
+import WeatherWidget from './components/WeatherWidget';
 // import { mockHouses, mockPredictions, mockUser } from './services/mockData';
 
 // --- Auth Context Simulation ---
@@ -153,6 +154,8 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
           </button>
 
           <div className="flex-1 flex justify-end items-center gap-4">
+            <WeatherWidget />
+            <div className="h-8 w-px bg-gray-100 mx-2 hidden sm:block"></div>
             <button className="p-2 text-gray-400 hover:text-blue-600 transition-colors relative">
               <Bell size={20} />
               <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full border-2 border-white"></span>

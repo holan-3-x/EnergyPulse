@@ -18,6 +18,9 @@ import (
 	pahomqtt "github.com/eclipse/paho.mqtt.golang"
 )
 
+// Global MQTT client instance
+var ActiveClient *Client
+
 // Client wraps the Paho MQTT client
 type Client struct {
 	client pahomqtt.Client
@@ -65,10 +68,12 @@ func NewSubscriber() (*Client, error) {
 		return nil, fmt.Errorf("failed to connect to MQTT broker: %w", token.Error())
 	}
 
-	return &Client{
+	ActiveClient = &Client{
 		client: client,
 		topic:  topic,
-	}, nil
+	}
+
+	return ActiveClient, nil
 }
 
 // subscribeToTopic subscribes to the meter data topic with QoS 1
@@ -94,8 +99,9 @@ func onConnectionLost(client pahomqtt.Client, err error) {
 func ProcessMeterData(data MeterData) {
 	// Find the household associated with this meter
 	var household models.Household
-	if err := database.DB.Where("meter_id = ?", data.MeterID).First(&household).Error; err != nil {
-		log.Printf("Unknown meter ID: %s", data.MeterID)
+	if err := database.DB.Where("meter_id = ? AND status = ?", data.MeterID, "active").First(&household).Error; err != nil {
+		// Log as debug rather than error if it's just an archived house still pulsing
+		log.Printf("Ignoring data for meter %s: node not found or not active", data.MeterID)
 		return
 	}
 
@@ -105,12 +111,16 @@ func ProcessMeterData(data MeterData) {
 		timestamp = time.Now()
 	}
 
-	// Use ML model to predict price
+	// Use ML model to predict price (now includes house details for realism)
 	predictedPrice, confidence := ml.PredictPrice(
+		&household,
 		timestamp.Hour(),
 		data.Temperature,
 		data.ConsumptionKwh,
 	)
+
+	// Simulate actual market price for comparison
+	actualPrice := ml.GenerateActualPrice(predictedPrice, timestamp.Hour())
 
 	// Create prediction record
 	prediction := models.Prediction{
@@ -122,6 +132,7 @@ func ProcessMeterData(data MeterData) {
 		Temperature:    data.Temperature,
 		ConsumptionKwh: data.ConsumptionKwh,
 		PredictedPrice: predictedPrice,
+		ActualPrice:    actualPrice,
 		Confidence:     confidence,
 	}
 

@@ -5,6 +5,8 @@ package main
 import (
 	"bytes"
 	"encoding/json"
+	"energy-prediction/internal/database"
+	"energy-prediction/internal/models"
 	"fmt"
 	"log"
 	"math/rand"
@@ -68,6 +70,19 @@ func main() {
 		log.Printf("✓ Connected to MQTT broker: %s", brokerURL)
 	}
 
+	// Connect to database to get real houses
+	dbPath := os.Getenv("DB_PATH")
+	if dbPath == "" {
+		dbPath = "data/energy.db"
+	}
+	if err := database.Connect(dbPath); err != nil {
+		log.Printf("Warning: Could not connect to database: %v", err)
+		log.Println("Will use default hardcoded meter IDs instead.")
+	} else {
+		log.Println("✓ Connected to database, fetching houses...")
+	}
+	defer database.Close()
+
 	// Set up graceful shutdown
 	quit := make(chan os.Signal, 1)
 	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
@@ -77,7 +92,7 @@ func main() {
 	defer ticker.Stop()
 
 	log.Println("")
-	log.Printf("Publishing data for %d smart meters every %v", numMeters, publishInterval)
+	log.Printf("Simulating smart meters every %v", publishInterval)
 	log.Println("Press Ctrl+C to stop")
 	log.Println("")
 
@@ -98,13 +113,37 @@ func main() {
 	}
 }
 
-// publishAllMeters sends data for all 20 meters
+// publishAllMeters sends data for real houses in the database
 func publishAllMeters(client mqtt.Client) {
 	now := time.Now()
 	hour := now.Hour()
 
-	for i := 1; i <= numMeters; i++ {
-		meterID := fmt.Sprintf("household_%d", i)
+	var meterIDs []string
+
+	// Try to get meter IDs from database
+	if database.DB != nil {
+		var households []models.Household
+		// Only simulate houses that are ACTIVE
+		if err := database.DB.Select("meter_id").Where("status = ?", "active").Find(&households).Error; err == nil {
+			for _, h := range households {
+				if h.MeterID != "" {
+					meterIDs = append(meterIDs, h.MeterID)
+				}
+			}
+		}
+	}
+
+	// Fallback if DB empty or unavailable
+	if len(meterIDs) == 0 {
+		log.Println("No houses found in database, using defaults.")
+		for i := 1; i <= 5; i++ {
+			meterIDs = append(meterIDs, fmt.Sprintf("household_%d", i))
+		}
+	}
+
+	log.Printf("Publishing data for %d houses...", len(meterIDs))
+
+	for _, meterID := range meterIDs {
 		data := generateMeterData(meterID, now, hour)
 
 		// Serialize to JSON
