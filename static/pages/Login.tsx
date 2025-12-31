@@ -19,6 +19,7 @@ const Login: React.FC = () => {
     setError('');
 
     try {
+      // Backend now expects 'email', not 'username'
       const { token, user } = await authService.login({ email, password });
 
       // Save to localStorage
@@ -113,9 +114,9 @@ const Login: React.FC = () => {
 
         <div className="mt-8 text-center bg-blue-50 p-4 rounded-xl border border-blue-100">
           <p className="text-xs text-blue-800 font-medium">Demo Credentials:</p>
-          <div className="flex justify-center gap-4 mt-2 text-xs text-blue-700">
-            <span>Admin: admin@energypulse.ai</span>
-            <span>User: user@energypulse.ai</span>
+          <div className="flex flex-col items-center gap-1 mt-2 text-[11px] text-blue-700">
+            <p><span className="font-bold">Admin:</span> admin@energypulse.it / password123</p>
+            <p><span className="font-bold">User:</span> mario.rossi@email.it / password123</p>
           </div>
         </div>
       </div>

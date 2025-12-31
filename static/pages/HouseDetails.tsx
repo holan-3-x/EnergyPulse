@@ -1,40 +1,73 @@
 
 import React, { useMemo } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { 
-  ArrowLeft, 
-  MapPin, 
-  Calendar, 
-  Users, 
-  Maximize, 
+import {
+  ArrowLeft,
+  MapPin,
+  Calendar,
+  Users,
+  Maximize,
   Thermometer,
   Zap,
   Info,
-  ExternalLink
+  ExternalLink,
+  User as UserIcon
 } from 'lucide-react';
-import { 
-  BarChart, 
-  Bar, 
-  XAxis, 
-  YAxis, 
-  CartesianGrid, 
-  Tooltip, 
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
   ResponsiveContainer,
   Cell
 } from 'recharts';
-import { mockHouses, mockPredictions } from '../services/mockData';
+import { housesService } from '../services/houses';
+import { predictionsService } from '../services/predictions';
+import { Household, Prediction } from '../types';
+import { useAuth } from '../App';
 
 const HouseDetails: React.FC = () => {
-  const { id } = useParams();
-  const house = mockHouses.find(h => h.id === id) || mockHouses[0];
-  
+  const { id } = useParams<{ id: string }>();
+  const [house, setHouse] = React.useState<Household | null>(null);
+  const [predictions, setPredictions] = React.useState<Prediction[]>([]);
+  const [loading, setLoading] = React.useState(true);
+  const [error, setError] = React.useState('');
+  const { user } = useAuth();
+  const isAdmin = user?.role === 'admin';
+
+  React.useEffect(() => {
+    const fetchData = async () => {
+      if (!id) return;
+      try {
+        const [h, p] = await Promise.all([
+          housesService.getHouse(id),
+          predictionsService.getPredictions({ houseId: id })
+        ]);
+        setHouse(h);
+        setPredictions(p);
+      } catch (err) {
+        console.error("Failed to fetch house details", err);
+        setError("Failed to load house details");
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchData();
+  }, [id]);
+
   const chartData = useMemo(() => {
-    return mockPredictions.map(p => ({
+    return predictions.slice(0, 24).map(p => ({
       time: new Date(p.timestamp).getHours() + ':00',
       consumption: p.consumptionKwh,
       price: p.predictedPrice
     }));
-  }, []);
+  }, [predictions]);
+
+  if (loading) return <div className="flex justify-center p-12 text-blue-600 font-bold">Loading...</div>;
+  if (!house) return <div className="p-12 text-center text-red-600 font-bold">House not found</div>;
+
 
   return (
     <div className="space-y-6 animate-in fade-in duration-500">
@@ -50,6 +83,14 @@ const HouseDetails: React.FC = () => {
               <Zap size={32} fill="currentColor" />
             </div>
             <h1 className="text-2xl font-bold text-gray-900 mb-1">{house.houseName}</h1>
+
+            {isAdmin && house.ownerName && (
+              <div className="flex items-center gap-2 text-blue-600 font-bold mb-3">
+                <UserIcon size={18} />
+                <span>Owner: {house.ownerName} ({house.userEmail})</span>
+              </div>
+            )}
+
             <p className="flex items-center gap-1.5 text-gray-500 text-sm mb-6">
               <MapPin size={16} /> {house.address}, {house.city}
             </p>
@@ -108,10 +149,10 @@ const HouseDetails: React.FC = () => {
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={chartData}>
                   <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-                  <XAxis dataKey="time" axisLine={false} tickLine={false} tick={{fontSize: 12, fill: '#64748b'}} />
-                  <YAxis axisLine={false} tickLine={false} tick={{fontSize: 12, fill: '#64748b'}} />
-                  <Tooltip 
-                    cursor={{fill: '#f8fafc'}}
+                  <XAxis dataKey="time" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#64748b' }} />
+                  <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#64748b' }} />
+                  <Tooltip
+                    cursor={{ fill: '#f8fafc' }}
                     contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}
                   />
                   <Bar dataKey="consumption" radius={[4, 4, 0, 0]}>
@@ -139,20 +180,29 @@ const HouseDetails: React.FC = () => {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100">
-                  {mockPredictions.slice(0, 5).map((p, i) => (
+                  {predictions.length === 0 ? (
+                    <tr>
+                      <td colSpan={4} className="px-6 py-8 text-center text-gray-400 text-sm italic">
+                        No blockchain verification available
+                      </td>
+                    </tr>
+                  ) : predictions.filter(p => p.blockchainConfirmed).slice(0, 5).map((p, i) => (
                     <tr key={i} className="hover:bg-gray-50 transition-colors">
-                      <td className="px-6 py-4 text-sm text-gray-700">{new Date(p.timestamp).toLocaleString([], { hour: '2-digit', minute: '2-digit' })}</td>
+                      <td className="px-6 py-4 text-sm text-gray-700">{new Date(p.timestamp).toLocaleString([], { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}</td>
                       <td className="px-6 py-4 text-sm font-bold text-gray-900">€{p.predictedPrice.toFixed(3)}</td>
                       <td className="px-6 py-4 text-xs font-mono text-blue-600">
                         <div className="flex items-center gap-1">
-                          {p.blockchainTx.substring(0, 10)}...
+                          {p.blockchainTx ? `${p.blockchainTx.substring(0, 10)}...` : 'N/A'}
                           <ExternalLink size={12} />
                         </div>
                       </td>
                       <td className="px-6 py-4 text-right">
-                        <span className="px-2 py-1 bg-green-50 text-green-700 text-[10px] font-bold rounded-full border border-green-100 uppercase tracking-tighter">
-                          Confirmed
-                        </span>
+                        <div className="flex flex-col items-end">
+                          <span className="px-2 py-1 bg-green-50 text-green-700 text-[10px] font-bold rounded-full border border-green-100 uppercase tracking-tighter">
+                            Confirmed
+                          </span>
+                          <span className="text-[9px] text-gray-400 mt-1 italic">(Simulated Chain)</span>
+                        </div>
                       </td>
                     </tr>
                   ))}

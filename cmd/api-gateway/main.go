@@ -174,6 +174,11 @@ func main() {
 		adminGroup.GET("/dashboard", handlers.AdminDashboard)
 	}
 
+	// SPA Routing: Serve index.html for any unknown route (except /api and /auth)
+	router.NoRoute(func(c *gin.Context) {
+		c.File("./static/index.html")
+	})
+
 	// Get port from environment or default
 	port := os.Getenv("PORT")
 	if port == "" {
@@ -192,8 +197,8 @@ func main() {
 	log.Println("  GET  /admin/dashboard - Admin stats")
 	log.Println("")
 	log.Println("Demo credentials:")
-	log.Println("  Admin: admin / password123")
-	log.Println("  User:  mario / password123")
+	log.Println("  Admin: admin@energypulse.it / password123")
+	log.Println("  User:  mario.rossi@email.it / password123")
 	log.Println("")
 
 	// Start server

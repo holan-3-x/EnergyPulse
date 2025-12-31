@@ -6,6 +6,7 @@ import (
 	"energy-prediction/internal/auth"
 	"energy-prediction/internal/database"
 	"energy-prediction/internal/models"
+
 	"github.com/gin-gonic/gin"
 )
 
@@ -51,7 +52,7 @@ func GetHouses(c *gin.Context) {
 	isAdmin := auth.IsAdmin(c)
 
 	var houses []models.Household
-	query := database.DB.Where("status = ?", models.StatusActive)
+	query := database.DB.Preload("User").Where("status = ?", models.StatusActive)
 
 	// Admin sees all, regular user sees only their own
 	if !isAdmin {
@@ -80,7 +81,7 @@ func GetHouse(c *gin.Context) {
 	houseID := c.Param("house_id")
 
 	var house models.Household
-	query := database.DB.Where("id = ?", houseID)
+	query := database.DB.Preload("User").Where("id = ?", houseID)
 
 	// Non-admins can only see their own houses
 	if !isAdmin {

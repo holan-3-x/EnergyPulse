@@ -24,12 +24,14 @@ export interface Household {
   region: string;
   country: string;
   members: number;
-  heatingType: 'Electric' | 'Gas' | 'Heat Pump' | 'Biomass';
+  heatingType: 'electric' | 'natural_gas' | 'heat_pump' | 'biomass';
   areaSqm: number;
   yearBuilt: number;
   meterId: string;
   status: 'active' | 'archived';
   createdAt: string;
+  userEmail?: string;
+  ownerName?: string;
 }
 
 export interface Prediction {

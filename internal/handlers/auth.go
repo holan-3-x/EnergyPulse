@@ -12,6 +12,7 @@ import (
 	"energy-prediction/internal/auth"
 	"energy-prediction/internal/database"
 	"energy-prediction/internal/models"
+
 	"github.com/gin-gonic/gin"
 )
 
@@ -24,12 +25,21 @@ var (
 
 // initMeterCounter initializes the meter counter from database
 func initMeterCounter() {
-	var maxMeter models.Household
-	result := database.DB.Order("meter_id DESC").First(&maxMeter)
-	if result.Error == nil {
-		// Extract number from "household_X"
-		fmt.Sscanf(maxMeter.MeterID, "household_%d", &meterCounter)
+	// Get all households to find the max meter number
+	// (ORDER BY meter_id DESC uses string comparison which is wrong: household_9 > household_20)
+	var households []models.Household
+	database.DB.Find(&households)
+
+	maxNum := 0
+	for _, h := range households {
+		var num int
+		if _, err := fmt.Sscanf(h.MeterID, "household_%d", &num); err == nil {
+			if num > maxNum {
+				maxNum = num
+			}
+		}
 	}
+	meterCounter = maxNum
 }
 
 // getNextMeterID returns the next available meter ID (thread-safe)
@@ -165,9 +175,9 @@ func Login(c *gin.Context) {
 		return
 	}
 
-	// Find user
+	// Find user by email
 	var user models.User
-	if result := database.DB.Where("username = ?", req.Username).First(&user); result.Error != nil {
+	if result := database.DB.Where("email = ?", req.Email).First(&user); result.Error != nil {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid credentials"})
 		return
 	}

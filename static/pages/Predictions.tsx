@@ -1,31 +1,48 @@
 
 import React, { useState, useMemo } from 'react';
-import { 
-  Filter, 
-  Download, 
-  Search, 
-  ChevronLeft, 
-  ChevronRight, 
-  TrendingUp, 
+import {
+  Filter,
+  Download,
+  Search,
+  ChevronLeft,
+  ChevronRight,
+  TrendingUp,
   Info,
   ExternalLink,
   ShieldCheck
 } from 'lucide-react';
-import { mockPredictions } from '../services/mockData';
+import { predictionsService } from '../services/predictions';
+import { Prediction } from '../types';
 
 const Predictions: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterType, setFilterType] = useState('all');
+  const [predictions, setPredictions] = useState<Prediction[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  React.useEffect(() => {
+    const fetchPredictions = async () => {
+      try {
+        const data = await predictionsService.getPredictions();
+        setPredictions(data);
+      } catch (err) {
+        console.error("Failed to fetch predictions", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchPredictions();
+  }, []);
 
   const filteredPredictions = useMemo(() => {
-    return mockPredictions.filter(p => {
-      const matchesSearch = p.blockchainTx.toLowerCase().includes(searchTerm.toLowerCase());
-      const matchesFilter = filterType === 'all' || 
+    return predictions.filter(p => {
+      const matchesSearch = p.blockchainTx?.toLowerCase().includes(searchTerm.toLowerCase());
+      const matchesFilter = filterType === 'all' ||
         (filterType === 'high' && p.predictedPrice > 0.28) ||
         (filterType === 'low' && p.predictedPrice <= 0.28);
       return matchesSearch && matchesFilter;
     });
-  }, [searchTerm, filterType]);
+  }, [predictions, searchTerm, filterType]);
 
   return (
     <div className="space-y-6 animate-in fade-in duration-500">
@@ -47,9 +64,9 @@ const Predictions: React.FC = () => {
           <div className="flex items-center gap-4 flex-1">
             <div className="relative flex-1 max-w-sm">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
-              <input 
-                type="text" 
-                placeholder="Search Tx Hash..." 
+              <input
+                type="text"
+                placeholder="Search Tx Hash..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="w-full pl-10 pr-4 py-2 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-sm"
@@ -57,7 +74,7 @@ const Predictions: React.FC = () => {
             </div>
             <div className="flex items-center gap-2">
               <Filter size={18} className="text-gray-400" />
-              <select 
+              <select
                 value={filterType}
                 onChange={(e) => setFilterType(e.target.value)}
                 className="bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none appearance-none"
@@ -68,7 +85,7 @@ const Predictions: React.FC = () => {
               </select>
             </div>
           </div>
-          
+
           <div className="flex items-center gap-2 bg-blue-50 text-blue-700 px-4 py-2 rounded-xl border border-blue-100">
             <TrendingUp size={18} />
             <span className="text-sm font-bold">Decision Tree Model: v2.4</span>
@@ -90,9 +107,17 @@ const Predictions: React.FC = () => {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
-              {filteredPredictions.map((p) => (
+              {loading ? (
+                <tr>
+                  <td colSpan={7} className="px-6 py-12 text-center text-blue-600 font-bold">Caricamento...</td>
+                </tr>
+              ) : filteredPredictions.length === 0 ? (
+                <tr>
+                  <td colSpan={7} className="px-6 py-12 text-center text-gray-400 italic">Nessun log trovato</td>
+                </tr>
+              ) : filteredPredictions.map((p) => (
                 <tr key={p.id} className="hover:bg-gray-50 transition-colors">
-                  <td className="px-6 py-4 text-xs font-mono text-gray-500">#{p.id.split('_').pop()}</td>
+                  <td className="px-6 py-4 text-xs font-mono text-gray-500">#{p.id}</td>
                   <td className="px-6 py-4 text-sm text-gray-700">
                     {new Date(p.timestamp).toLocaleDateString()} {new Date(p.timestamp).getHours()}:00
                   </td>
@@ -110,24 +135,28 @@ const Predictions: React.FC = () => {
                   <td className="px-6 py-4">
                     <div className="flex flex-col gap-1 w-24">
                       <div className="h-1.5 w-full bg-gray-100 rounded-full overflow-hidden">
-                        <div 
-                          className="h-full bg-blue-500 rounded-full" 
-                          style={{ width: `${p.confidence * 100}%` }}
+                        <div
+                          className="h-full bg-blue-500 rounded-full"
+                          style={{ width: `${p.confidence}%` }}
                         />
                       </div>
-                      <span className="text-[10px] font-bold text-gray-500">{(p.confidence * 100).toFixed(1)}% Sure</span>
+                      <span className="text-[10px] font-bold text-gray-500">{p.confidence}% Sure</span>
                     </div>
                   </td>
                   <td className="px-6 py-4">
-                    <a 
-                      href={`https://etherscan.io/tx/${p.blockchainTx}`} 
-                      target="_blank" 
-                      rel="noopener noreferrer"
-                      className="group flex items-center gap-2 text-blue-600 hover:text-blue-700"
-                    >
-                      <ShieldCheck size={18} />
-                      <span className="text-xs font-bold underline decoration-blue-200">Verify</span>
-                    </a>
+                    {p.blockchainConfirmed ? (
+                      <a
+                        href={`https://etherscan.io/tx/${p.blockchainTx}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="group flex items-center gap-2 text-blue-600 hover:text-blue-700"
+                      >
+                        <ShieldCheck size={18} />
+                        <span className="text-xs font-bold underline decoration-blue-200">Verify</span>
+                      </a>
+                    ) : (
+                      <span className="text-[10px] font-bold text-gray-400 italic">Pending...</span>
+                    )}
                   </td>
                 </tr>
               ))}
@@ -148,7 +177,7 @@ const Predictions: React.FC = () => {
           </div>
         </div>
       </div>
-      
+
       <div className="bg-yellow-50 border border-yellow-200 p-4 rounded-xl flex items-start gap-3">
         <Info className="text-yellow-600 shrink-0" size={20} />
         <div>

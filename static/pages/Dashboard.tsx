@@ -13,6 +13,7 @@ import {
   ShieldCheck
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { useAuth } from '../App';
 import {
   XAxis,
   YAxis,
@@ -30,6 +31,8 @@ const Dashboard: React.FC = () => {
   const [houses, setHouses] = React.useState<Household[]>([]);
   const [predictions, setPredictions] = React.useState<Prediction[]>([]);
   const [loading, setLoading] = React.useState(true);
+  const { user } = useAuth();
+  const isAdmin = user?.role === 'admin';
 
   React.useEffect(() => {
     const fetchData = async () => {
@@ -74,7 +77,7 @@ const Dashboard: React.FC = () => {
           <p className="text-gray-500">Here is what's happening with your households today.</p>
         </div>
         <Link
-          to="/register"
+          to="/houses"
           className="bg-blue-600 text-white px-4 py-2 rounded-xl text-sm font-bold flex items-center justify-center gap-2 hover:bg-blue-700 transition-all shadow-lg shadow-blue-100"
         >
           <Plus size={18} /> Add New House
@@ -82,30 +85,44 @@ const Dashboard: React.FC = () => {
       </div>
 
       {/* Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        {[
-          { label: 'Total Consumption', value: '42.8 kWh', trend: '+12%', up: true, icon: Activity, color: 'text-blue-600', bg: 'bg-blue-50' },
-          { label: 'Avg. Price/Hour', value: '€0.24', trend: '-2.5%', up: false, icon: Zap, color: 'text-yellow-600', bg: 'bg-yellow-50' },
-          { label: 'Monthly Est.', value: '€142.10', trend: '+5%', up: true, icon: TrendingUp, color: 'text-green-600', bg: 'bg-green-50' },
-          { label: 'Active Meters', value: '02', trend: 'Stable', up: null, icon: Calendar, color: 'text-purple-600', bg: 'bg-purple-50' }
-        ].map((stat, i) => (
-          <div key={i} className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm">
-            <div className="flex items-center justify-between mb-4">
-              <div className={`p-3 rounded-xl ${stat.bg} ${stat.color}`}>
-                <stat.icon size={20} />
-              </div>
-              {stat.up !== null && (
-                <div className={`flex items-center gap-1 text-xs font-bold px-2 py-1 rounded-full ${stat.up ? 'bg-red-50 text-red-600' : 'bg-green-50 text-green-600'}`}>
-                  {stat.up ? <TrendingUp size={12} /> : <TrendingDown size={12} />}
-                  {stat.trend}
+      {(() => {
+        // Compute real stats from data
+        const totalConsumption = predictions.reduce((sum, p) => sum + p.consumptionKwh, 0);
+        const avgPrice = predictions.length > 0
+          ? predictions.reduce((sum, p) => sum + p.predictedPrice, 0) / predictions.length
+          : 0;
+        const monthlyEst = avgPrice * 24 * 30 * (totalConsumption / Math.max(predictions.length, 1));
+        const activeMeters = houses.length;
+
+        const stats = [
+          { label: 'Total Consumption', value: `${totalConsumption.toFixed(1)} kWh`, trend: '+12%', up: true, icon: Activity, color: 'text-blue-600', bg: 'bg-blue-50' },
+          { label: 'Avg. Price/Hour', value: `€${avgPrice.toFixed(2)}`, trend: '-2.5%', up: false, icon: Zap, color: 'text-yellow-600', bg: 'bg-yellow-50' },
+          { label: 'Monthly Est.', value: `€${monthlyEst.toFixed(2)}`, trend: '+5%', up: true, icon: TrendingUp, color: 'text-green-600', bg: 'bg-green-50' },
+          { label: 'Active Meters', value: String(activeMeters).padStart(2, '0'), trend: 'Stable', up: null, icon: Calendar, color: 'text-purple-600', bg: 'bg-purple-50' }
+        ];
+
+        return (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            {stats.map((stat, i) => (
+              <div key={i} className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm">
+                <div className="flex items-center justify-between mb-4">
+                  <div className={`p-3 rounded-xl ${stat.bg} ${stat.color}`}>
+                    <stat.icon size={20} />
+                  </div>
+                  {stat.up !== null && (
+                    <div className={`flex items-center gap-1 text-xs font-bold px-2 py-1 rounded-full ${stat.up ? 'bg-red-50 text-red-600' : 'bg-green-50 text-green-600'}`}>
+                      {stat.up ? <TrendingUp size={12} /> : <TrendingDown size={12} />}
+                      {stat.trend}
+                    </div>
+                  )}
                 </div>
-              )}
-            </div>
-            <p className="text-sm font-medium text-gray-500">{stat.label}</p>
-            <h3 className="text-2xl font-bold text-gray-900 mt-1">{stat.value}</h3>
+                <p className="text-sm font-medium text-gray-500">{stat.label}</p>
+                <h3 className="text-2xl font-bold text-gray-900 mt-1">{stat.value}</h3>
+              </div>
+            ))}
           </div>
-        ))}
-      </div>
+        );
+      })()}
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Main Chart */}
@@ -162,6 +179,9 @@ const Dashboard: React.FC = () => {
                     </div>
                     <div>
                       <h4 className="text-sm font-bold text-gray-900">{house.houseName}</h4>
+                      {isAdmin && house.ownerName && (
+                        <p className="text-[10px] text-blue-600 font-bold">Owner: {house.ownerName}</p>
+                      )}
                       <p className="text-xs text-gray-500">{house.city}, {house.region}</p>
                     </div>
                   </div>
@@ -174,9 +194,11 @@ const Dashboard: React.FC = () => {
           <div className="mt-8 p-4 bg-gradient-to-br from-blue-600 to-indigo-700 rounded-2xl text-white relative overflow-hidden">
             <div className="relative z-10">
               <p className="text-xs font-semibold opacity-80 mb-1">Blockchain Status</p>
-              <h4 className="font-bold mb-3">Predictions Verified</h4>
+              <h4 className="font-bold mb-3">
+                {predictions.filter(p => p.blockchainConfirmed).length} Predictions Verified
+              </h4>
               <div className="flex items-center gap-2 text-[10px] bg-white/10 w-fit px-2 py-1 rounded-full">
-                <ShieldCheck size={12} /> Live Node Connected
+                <ShieldCheck size={12} /> Local Node Operational
               </div>
             </div>
             <Activity size={80} className="absolute -right-4 -bottom-4 opacity-10" />

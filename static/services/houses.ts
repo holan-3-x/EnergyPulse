@@ -19,6 +19,11 @@ export const housesService = {
         return response.data;
     },
 
+    async updateHouse(id: string, houseData: any): Promise<Household> {
+        const response = await api.put(`/api/houses/${id}`, houseData);
+        return response.data;
+    },
+
     async deleteHouse(id: string): Promise<void> {
         await api.delete(`/api/houses/${id}`);
     }

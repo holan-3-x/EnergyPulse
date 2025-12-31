@@ -1,14 +1,14 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
 import { HashRouter, Routes, Route, Navigate, Link, useNavigate, useLocation } from 'react-router-dom';
-import { 
-  LayoutDashboard, 
-  Home, 
-  TrendingUp, 
-  User as UserIcon, 
-  ShieldCheck, 
-  LogOut, 
-  Menu, 
+import {
+  LayoutDashboard,
+  Home,
+  TrendingUp,
+  User as UserIcon,
+  ShieldCheck,
+  LogOut,
+  Menu,
   X,
   Zap,
   Bell
@@ -19,10 +19,11 @@ import Login from './pages/Login';
 import Register from './pages/Register';
 import Dashboard from './pages/Dashboard';
 import HouseDetails from './pages/HouseDetails';
+import Houses from './pages/Houses';
 import Predictions from './pages/Predictions';
 import Profile from './pages/Profile';
 import AdminDash from './pages/AdminDash';
-import { mockHouses, mockPredictions, mockUser } from './services/mockData';
+// import { mockHouses, mockPredictions, mockUser } from './services/mockData';
 
 // --- Auth Context Simulation ---
 interface AuthContextType {
@@ -70,7 +71,7 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
 
   const navItems = [
     { label: 'Dashboard', path: '/dashboard', icon: LayoutDashboard },
-    { label: 'My Houses', path: '/houses', icon: Home },
+    { label: user?.role === UserRole.ADMIN ? 'System Households' : 'My Houses', path: '/houses', icon: Home },
     { label: 'Predictions', path: '/predictions', icon: TrendingUp },
     { label: 'Profile', path: '/profile', icon: UserIcon },
   ];
@@ -85,8 +86,8 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     <div className="min-h-screen bg-gray-50 flex">
       {/* Mobile Sidebar Overlay */}
       {isSidebarOpen && (
-        <div 
-          className="fixed inset-0 bg-black/50 z-40 md:hidden" 
+        <div
+          className="fixed inset-0 bg-black/50 z-40 md:hidden"
           onClick={() => setSidebarOpen(false)}
         />
       )}
@@ -112,8 +113,8 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
                 onClick={() => setSidebarOpen(false)}
                 className={`
                   flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-colors
-                  ${activePath.startsWith(item.path) 
-                    ? 'bg-blue-50 text-blue-700' 
+                  ${activePath.startsWith(item.path)
+                    ? 'bg-blue-50 text-blue-700'
                     : 'text-gray-600 hover:bg-gray-100'}
                 `}
               >
@@ -138,7 +139,7 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
       {/* Main Content */}
       <div className="flex-1 flex flex-col min-w-0">
         <header className="h-16 bg-white border-b border-gray-200 flex items-center justify-between px-6 sticky top-0 z-30">
-          <button 
+          <button
             className="md:hidden p-2 text-gray-500 hover:bg-gray-100 rounded-lg"
             onClick={() => setSidebarOpen(true)}
           >
@@ -155,9 +156,9 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
                 <p className="text-sm font-semibold text-gray-900">{user?.firstName} {user?.lastName}</p>
                 <p className="text-xs text-gray-500 capitalize">{user?.role}</p>
               </div>
-              <img 
+              <img
                 src={user?.avatar || `https://ui-avatars.com/api/?name=${user?.firstName}+${user?.lastName}`}
-                alt="Avatar" 
+                alt="Avatar"
                 className="w-9 h-9 rounded-full border border-gray-200"
               />
             </div>
@@ -188,14 +189,14 @@ const App: React.FC = () => {
           <Route path="/" element={<Landing />} />
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
-          
+
           <Route path="/dashboard" element={<PrivateRoute><Dashboard /></PrivateRoute>} />
-          <Route path="/houses" element={<PrivateRoute><Dashboard /></PrivateRoute>} />
+          <Route path="/houses" element={<PrivateRoute><Houses /></PrivateRoute>} />
           <Route path="/houses/:id" element={<PrivateRoute><HouseDetails /></PrivateRoute>} />
           <Route path="/predictions" element={<PrivateRoute><Predictions /></PrivateRoute>} />
           <Route path="/profile" element={<PrivateRoute><Profile /></PrivateRoute>} />
           <Route path="/admin" element={<PrivateRoute role={UserRole.ADMIN}><AdminDash /></PrivateRoute>} />
-          
+
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </HashRouter>

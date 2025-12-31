@@ -13,12 +13,12 @@ type Prediction struct {
 	HouseID             string    `json:"houseId" gorm:"column:house_id;index;not null;size:50"`
 	MeterID             string    `json:"meterId" gorm:"column:meter_id;index;not null;size:50"`
 	Timestamp           time.Time `json:"timestamp" gorm:"index;not null"`
-	Hour                int       `json:"hour" gorm:"not null"`                  // 0-23
-	Temperature         float64   `json:"temperature" gorm:"not null"`           // Celsius
+	Hour                int       `json:"hour" gorm:"not null"`        // 0-23
+	Temperature         float64   `json:"temperature" gorm:"not null"` // Celsius
 	ConsumptionKwh      float64   `json:"consumptionKwh" gorm:"column:consumption_kwh;not null"`
 	PredictedPrice      float64   `json:"predictedPrice" gorm:"column:predicted_price;not null"` // €/kWh
-	Confidence          int       `json:"confidence" gorm:"not null"`            // 0-100%
-	BlockchainTx        string    `json:"blockchainTx" gorm:"column:blockchain_tx;uniqueIndex;size:100"`
+	Confidence          int       `json:"confidence" gorm:"not null"`                            // 0-100%
+	BlockchainTx        string    `json:"blockchainTx" gorm:"column:blockchain_tx;index;size:100"`
 	BlockchainConfirmed bool      `json:"blockchainConfirmed" gorm:"column:blockchain_confirmed;default:false"`
 	CreatedAt           time.Time `json:"createdAt" gorm:"autoCreateTime"`
 
@@ -34,14 +34,14 @@ func (Prediction) TableName() string {
 // BlockchainLog stores the details of blockchain transactions for predictions.
 // This provides an audit trail and verification mechanism.
 type BlockchainLog struct {
-	ID              uint      `json:"id" gorm:"primaryKey;autoIncrement"`
-	PredictionID    uint      `json:"predictionId" gorm:"index;not null"`
-	TransactionHash string    `json:"transactionHash" gorm:"column:transaction_hash;uniqueIndex;not null;size:100"`
-	BlockNumber     uint64    `json:"blockNumber" gorm:"column:block_number"`
-	GasUsed         uint64    `json:"gasUsed" gorm:"column:gas_used"`
-	Status          string    `json:"status" gorm:"size:20"` // pending, confirmed, failed
-	ContractAddress string    `json:"contractAddress" gorm:"column:contract_address;size:100"`
-	LoggedAt        time.Time `json:"loggedAt" gorm:"column:logged_at;autoCreateTime"`
+	ID              uint       `json:"id" gorm:"primaryKey;autoIncrement"`
+	PredictionID    uint       `json:"predictionId" gorm:"index;not null"`
+	TransactionHash string     `json:"transactionHash" gorm:"column:transaction_hash;uniqueIndex;not null;size:100"`
+	BlockNumber     uint64     `json:"blockNumber" gorm:"column:block_number"`
+	GasUsed         uint64     `json:"gasUsed" gorm:"column:gas_used"`
+	Status          string     `json:"status" gorm:"size:20"` // pending, confirmed, failed
+	ContractAddress string     `json:"contractAddress" gorm:"column:contract_address;size:100"`
+	LoggedAt        time.Time  `json:"loggedAt" gorm:"column:logged_at;autoCreateTime"`
 	ConfirmedAt     *time.Time `json:"confirmedAt" gorm:"column:confirmed_at"`
 
 	// Relation
@@ -127,11 +127,11 @@ type StatisticsResponse struct {
 
 // AdminDashboardResponse contains system-wide statistics for admins
 type AdminDashboardResponse struct {
-	TotalUsers          int64                 `json:"totalUsers"`
-	TotalHouseholds     int64                 `json:"totalHouseholds"`
-	TotalPredictions    int64                 `json:"totalPredictions"`
-	ActiveSessions      int64                 `json:"activeSessions"`
-	BlockchainConfirmed int64                 `json:"blockchainConfirmed"`
-	RecentPredictions   []PredictionResponse  `json:"recentPredictions"`
-	SystemHealth        string                `json:"systemHealth"`
+	TotalUsers          int64                `json:"totalUsers"`
+	TotalHouseholds     int64                `json:"totalHouseholds"`
+	TotalPredictions    int64                `json:"totalPredictions"`
+	ActiveSessions      int64                `json:"activeSessions"`
+	BlockchainConfirmed int64                `json:"blockchainConfirmed"`
+	RecentPredictions   []PredictionResponse `json:"recentPredictions"`
+	SystemHealth        string               `json:"systemHealth"`
 }

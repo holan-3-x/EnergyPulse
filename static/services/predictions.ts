@@ -2,8 +2,8 @@ import api from './api';
 import { Prediction } from '../types';
 
 export const predictionsService = {
-    async getPredictions(): Promise<Prediction[]> {
-        const response = await api.get('/api/predictions');
+    async getPredictions(filters?: { houseId?: string, meterId?: string, startDate?: string, endDate?: string }): Promise<Prediction[]> {
+        const response = await api.get('/api/predictions', { params: filters });
         return response.data.predictions || [];
     },
 

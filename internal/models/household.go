@@ -1,6 +1,7 @@
 package models
 
 import (
+	"fmt"
 	"time"
 )
 
@@ -25,21 +26,21 @@ const (
 // Household represents a user's house with energy monitoring.
 // Each household is linked to a smart meter for IoT data collection.
 type Household struct {
-	ID        string          `json:"id" gorm:"primaryKey;size:50"`           // Format: house_001
-	UserID    uint            `json:"userId" gorm:"index;not null"`           // Foreign key
-	HouseName string          `json:"houseName" gorm:"column:house_name;not null;size:100"`
-	Address   string          `json:"address" gorm:"not null;size:200"`
-	City      string          `json:"city" gorm:"not null;size:100"`
-	Region    string          `json:"region" gorm:"size:100"`
-	Country   string          `json:"country" gorm:"not null;size:100"`
-	Members   int             `json:"members" gorm:"column:household_members;default:1"`
-	HeatingType HeatingType   `json:"heatingType" gorm:"column:heating_type;type:varchar(20)"`
-	AreaSqm   float64         `json:"areaSqm" gorm:"column:area_sqm"`
-	YearBuilt int             `json:"yearBuilt" gorm:"column:year_built"`
-	MeterID   string          `json:"meterId" gorm:"column:meter_id;uniqueIndex;size:50"` // Format: household_1
-	Status    HouseholdStatus `json:"status" gorm:"type:varchar(20);default:'active'"`
-	CreatedAt time.Time       `json:"createdAt" gorm:"autoCreateTime"`
-	UpdatedAt time.Time       `json:"updatedAt" gorm:"autoUpdateTime"`
+	ID          string          `json:"id" gorm:"primaryKey;size:50"` // Format: house_001
+	UserID      uint            `json:"userId" gorm:"index;not null"` // Foreign key
+	HouseName   string          `json:"houseName" gorm:"column:house_name;not null;size:100"`
+	Address     string          `json:"address" gorm:"not null;size:200"`
+	City        string          `json:"city" gorm:"not null;size:100"`
+	Region      string          `json:"region" gorm:"size:100"`
+	Country     string          `json:"country" gorm:"not null;size:100"`
+	Members     int             `json:"members" gorm:"column:household_members;default:1"`
+	HeatingType HeatingType     `json:"heatingType" gorm:"column:heating_type;type:varchar(20)"`
+	AreaSqm     float64         `json:"areaSqm" gorm:"column:area_sqm"`
+	YearBuilt   int             `json:"yearBuilt" gorm:"column:year_built"`
+	MeterID     string          `json:"meterId" gorm:"column:meter_id;uniqueIndex;size:50"` // Format: household_1
+	Status      HouseholdStatus `json:"status" gorm:"type:varchar(20);default:'active'"`
+	CreatedAt   time.Time       `json:"createdAt" gorm:"autoCreateTime"`
+	UpdatedAt   time.Time       `json:"updatedAt" gorm:"autoUpdateTime"`
 
 	// Relations
 	User        User         `json:"-" gorm:"foreignKey:UserID"`
@@ -94,11 +95,13 @@ type HouseholdResponse struct {
 	MeterID     string          `json:"meterId"`
 	Status      HouseholdStatus `json:"status"`
 	CreatedAt   time.Time       `json:"createdAt"`
+	UserEmail   string          `json:"userEmail,omitempty"` // Added for admin view
+	OwnerName   string          `json:"ownerName,omitempty"` // Added for admin view
 }
 
 // ToResponse converts Household to HouseholdResponse
 func (h *Household) ToResponse() HouseholdResponse {
-	return HouseholdResponse{
+	resp := HouseholdResponse{
 		ID:          h.ID,
 		UserID:      h.UserID,
 		HouseName:   h.HouseName,
@@ -114,4 +117,11 @@ func (h *Household) ToResponse() HouseholdResponse {
 		Status:      h.Status,
 		CreatedAt:   h.CreatedAt,
 	}
+
+	if h.User.Email != "" {
+		resp.UserEmail = h.User.Email
+		resp.OwnerName = fmt.Sprintf("%s %s", h.User.FirstName, h.User.LastName)
+	}
+
+	return resp
 }

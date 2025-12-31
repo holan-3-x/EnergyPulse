@@ -39,8 +39,8 @@ const Register: React.FC = () => {
         username: formData.email.split('@')[0], // derived username
         email: formData.email,
         password: formData.password,
-        first_name: formData.firstName,
-        last_name: formData.lastName,
+        firstName: formData.firstName,
+        lastName: formData.lastName,
         // House details flattened as per backend RegisterRequest
         houseName: formData.houseName,
         address: formData.address,
@@ -52,7 +52,7 @@ const Register: React.FC = () => {
         members: parseInt(formData.members) || 1
       });
 
-      // Auto login
+      // Auto login - backend now expects 'email'
       const { user, token } = await authService.login({
         email: formData.email,
         password: formData.password
