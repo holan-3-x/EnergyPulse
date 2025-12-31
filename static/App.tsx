@@ -30,6 +30,7 @@ interface AuthContextType {
   user: User | null;
   login: (u: User) => void;
   logout: () => void;
+  updateUser: (u: User) => void;
 }
 
 const AuthContext = React.createContext<AuthContextType | undefined>(undefined);
@@ -50,8 +51,13 @@ const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => 
     localStorage.removeItem('ep_user');
   };
 
+  const updateUser = (u: User) => {
+    setUser(u);
+    localStorage.setItem('ep_user', JSON.stringify(u));
+  };
+
   return (
-    <AuthContext.Provider value={{ user, login, logout }}>
+    <AuthContext.Provider value={{ user, login, logout, updateUser }}>
       {children}
     </AuthContext.Provider>
   );

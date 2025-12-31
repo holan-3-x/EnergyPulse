@@ -6,6 +6,7 @@ import (
 	"energy-prediction/internal/auth"
 	"energy-prediction/internal/database"
 	"energy-prediction/internal/models"
+
 	"github.com/gin-gonic/gin"
 )
 
@@ -41,6 +42,9 @@ func UpdateProfile(c *gin.Context) {
 	}
 	if req.LastName != "" {
 		updates["last_name"] = req.LastName
+	}
+	if req.Email != "" {
+		updates["email"] = req.Email
 	}
 	if req.Phone != "" {
 		updates["phone"] = req.Phone
