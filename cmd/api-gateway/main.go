@@ -169,6 +169,16 @@ func main() {
 	// Weather endpoint (Public)
 	router.GET("/api/weather/:city", handlers.GetWeather)
 
+	// ========== Blockchain Endpoints (Protected) ==========
+	blockchainGroup := router.Group("/api/blockchain")
+	blockchainGroup.Use(auth.JWTMiddleware())
+	{
+		blockchainGroup.GET("/logs", handlers.GetUserBlockchainLogs)
+		blockchainGroup.GET("/stats", handlers.GetBlockchainStats)
+		blockchainGroup.GET("/verify/:tx_hash", handlers.VerifyTransaction)
+		blockchainGroup.GET("/block/:number", handlers.GetBlockByNumber)
+	}
+
 	// ========== Admin Endpoints (Protected + Admin) ==========
 	adminGroup := router.Group("/admin")
 	adminGroup.Use(auth.JWTMiddleware(), auth.AdminMiddleware())

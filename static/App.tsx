@@ -11,7 +11,8 @@ import {
   Menu,
   X,
   Zap,
-  Bell
+  Bell,
+  Blocks
 } from 'lucide-react';
 import { User, UserRole, Household, Prediction } from './types';
 import Landing from './pages/Landing';
@@ -23,6 +24,7 @@ import Houses from './pages/Houses';
 import Predictions from './pages/Predictions';
 import Profile from './pages/Profile';
 import AdminDash from './pages/AdminDash';
+import BlockchainLedger from './pages/BlockchainLedger';
 import WeatherWidget from './components/WeatherWidget';
 // import { mockHouses, mockPredictions, mockUser } from './services/mockData';
 
@@ -80,6 +82,7 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     { label: 'Dashboard', path: '/dashboard', icon: LayoutDashboard },
     { label: user?.role === UserRole.ADMIN ? 'System Households' : 'My Houses', path: '/houses', icon: Home },
     { label: 'Predictions', path: '/predictions', icon: TrendingUp },
+    { label: 'Blockchain', path: '/blockchain', icon: Blocks },
     { label: 'Profile', path: '/profile', icon: UserIcon },
   ];
 
@@ -203,6 +206,7 @@ const App: React.FC = () => {
           <Route path="/houses" element={<PrivateRoute><Houses /></PrivateRoute>} />
           <Route path="/houses/:id" element={<PrivateRoute><HouseDetails /></PrivateRoute>} />
           <Route path="/predictions" element={<PrivateRoute><Predictions /></PrivateRoute>} />
+          <Route path="/blockchain" element={<PrivateRoute><BlockchainLedger /></PrivateRoute>} />
           <Route path="/profile" element={<PrivateRoute><Profile /></PrivateRoute>} />
           <Route path="/admin" element={<PrivateRoute role={UserRole.ADMIN}><AdminDash /></PrivateRoute>} />
 
