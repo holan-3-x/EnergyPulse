@@ -47,12 +47,12 @@ const Landing: React.FC = () => {
               Learn More
             </a>
           </div>
-          
+
           <div className="mt-20 relative w-full max-w-4xl">
             <div className="absolute -inset-4 bg-gradient-to-r from-blue-100 to-indigo-100 rounded-[2rem] blur-2xl opacity-50"></div>
-            <img 
-              src="https://picsum.photos/seed/dashboard-preview/1200/800" 
-              alt="Dashboard Preview" 
+            <img
+              src="https://picsum.photos/seed/dashboard-preview/1200/800"
+              alt="Dashboard Preview"
               className="relative rounded-2xl shadow-2xl border border-gray-100"
             />
           </div>
@@ -99,7 +99,7 @@ const Landing: React.FC = () => {
       {/* Footer */}
       <footer className="py-12 border-t border-gray-100">
         <div className="max-w-7xl mx-auto px-6 text-center text-gray-500 text-sm">
-          <p>© 2024 EnergyPulse Prediction Systems. Created for Distributed Programming Course.</p>
+          <p>© 2026 EnergyPulse Prediction Systems by Holan. Created for Project and Test Case.</p>
         </div>
       </footer>
     </div>

@@ -609,3 +609,55 @@ All errors follow this format:
 - `404` - Not Found
 - `409` - Conflict (duplicate resource)
 - `500` - Internal Server Error
+
+---
+
+## 5. Simulation Endpoints
+
+### Publish Meter Data (HTTP Fallback)
+Allows the simulator to push data via HTTP when MQTT is unavailable.
+
+**Request:**
+```http
+POST /api/simulate
+Content-Type: application/json
+
+{
+  "meterId": "household_12",
+  "timestamp": "2024-12-30T15:30:00Z",
+  "temperature": 12.5,
+  "consumptionKwh": 0.45
+}
+```
+
+**Response (200):**
+```json
+{
+  "status": "received",
+  "meterId": "household_12"
+}
+```
+
+---
+
+## 6. Blockchain Endpoints
+
+### Verify Transaction
+Cryptographically verifies a transaction hash against the ledger.
+
+**Request:**
+```http
+GET /api/blockchain/verify/0x53a7dd412a38782983fd24e8e09cde40c65583b059e9e4bfa5afb64b59abc26b
+Authorization: Bearer <token>
+```
+
+**Response (200):**
+```json
+{
+  "valid": true,
+  "blockNumber": 15000046,
+  "timestamp": "2026-01-01T21:22:41.176Z",
+  "predictionId": 24286
+}
+```
+
