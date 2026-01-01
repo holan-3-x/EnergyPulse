@@ -29,7 +29,7 @@ type MeterData struct {
 
 const (
 	numMeters       = 20
-	publishInterval = 30 * time.Second // Publish every 30 seconds
+	publishInterval = 2 * time.Second // Publish every 2 seconds
 )
 
 func main() {

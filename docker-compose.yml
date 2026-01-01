@@ -48,8 +48,27 @@ services:
     container_name: energypulse-simulator
     environment:
       - MQTT_BROKER=tcp://mqtt:1883
+      - DB_PATH=/app/data/energy.db
+    volumes:
+      - ./data:/app/data
     depends_on:
       - mqtt
+      - api
+    networks:
+      - energypulse-network
+    restart: unless-stopped
+
+  # Frontend (React)
+  frontend:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.frontend
+    container_name: energypulse-frontend
+    ports:
+      - "3000:3000"
+    environment:
+      - VITE_API_URL=http://localhost:8080
+    depends_on:
       - api
     networks:
       - energypulse-network
