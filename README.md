@@ -26,6 +26,7 @@ For a deep dive into how the system works, please refer to:
 *   **[System Flow & Architecture](docs/SYSTEM_FLOW.md)**: Explains the Hybrid Event-Driven/REST architecture.
 *   **[API Documentation](docs/API.md)**: Full list of backend endpoints (Auth, Houses, Predictions).
 *   **[Core Logic Deep Dive](docs/CORE_LOGIC.md)**: Explanations of ML Algorithms, Blockchain Hashing, and DB Schema.
+*   **[Tech Stack & Theory](docs/TECHNOLOGY_THEORY.md)**: "Why we used MQTT/Go/Docker" - Design decisions.
 *   **[Final Report](final_report.md)**: Comprehensive academic report detailing methodology and results.
 
 ---
