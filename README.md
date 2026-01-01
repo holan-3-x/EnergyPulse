@@ -1,314 +1,77 @@
-# EnergyPulse - Energy Price Prediction System
+# EnergyPulse - Smart Energy Prediction System
 
-**Course:** Distributed Programming for Web, IoT and Mobile Systems 2025-2026  
-**Professor:** Letterio Galletta  
-**Student:** Holan Omeed Kunimohammed (7193994)
+A comprehensive Distributed Energy Resource (DER) management system with AI-driven price prediction, IoT smart meter simulation, and blockchain auditing.
 
-## 📋 Project Overview
+## 🚀 Quick Start (Local Development)
 
-EnergyPulse is a production-ready energy price prediction system that demonstrates key concepts from the distributed systems course:
+The easiest way to run the full system including Frontend, Backend, and MQTT Simulation.
 
-- **MQTT** - IoT smart meter data collection (Paho library)
-- **REST API** - 18 endpoints using Gin framework
-- **Blockchain** - Immutable prediction logging (simulated)
-- **Authentication** - JWT tokens with bcrypt password hashing
-- **Microservices** - API Gateway + MQTT Simulator
+**Prerequisites:**
+- [Go 1.22+](https://go.dev/dl/)
+- [Node.js 18+](https://nodejs.org/)
 
-## 🏗️ Architecture
-
-```
-┌──────────────────────────────────────────────────────────────────┐
-│                        Frontend (React)                          │
-│                    http://localhost:3000                         │
-└──────────────────────────────────────────────────────────────────┘
-                              │
-                              ▼
-┌──────────────────────────────────────────────────────────────────┐
-│                     API Gateway (Go + Gin)                       │
-│                    http://localhost:8080                         │
-│  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐              │
-│  │  Auth       │  │  Houses     │  │ Predictions │              │
-│  │  Handlers   │  │  Handlers   │  │  Handlers   │              │
-│  └─────────────┘  └─────────────┘  └─────────────┘              │
-│         │                │                │                      │
-│         └────────────────┼────────────────┘                      │
-│                          ▼                                       │
-│                   ┌─────────────┐                                │
-│                   │   SQLite    │                                │
-│                   │  Database   │                                │
-│                   └─────────────┘                                │
-└──────────────────────────────────────────────────────────────────┘
-                              │
-                              │ MQTT Subscribe
-                              ▼
-┌──────────────────────────────────────────────────────────────────┐
-│                    MQTT Broker (Mosquitto)                       │
-│                    tcp://localhost:1883                          │
-└──────────────────────────────────────────────────────────────────┘
-                              ▲
-                              │ MQTT Publish
-                              │
-┌──────────────────────────────────────────────────────────────────┐
-│                  Smart Meter Simulator (Go)                      │
-│                    20 simulated IoT meters                       │
-└──────────────────────────────────────────────────────────────────┘
-```
-
-## 🚀 Quick Start
-
-### Prerequisites
-
-- Go 1.21+
-- Docker (optional, for MQTT broker)
-
-### Option 1: Run Locally
-
+**1. Start the System:**
+Open your terminal and run the all-in-one start script:
 ```bash
-# Clone and enter directory
-cd energy-prediction
-
-# Install dependencies
-go mod tidy
-
-# Run the API server
-go run ./cmd/api-gateway
-
-# Server starts at http://localhost:8080
+./start.sh
 ```
+This script will automatically:
+- Start the Go Backend Server (API Gateway)
+- Start the Smart Meter Simulator
+- Start the React Frontend
 
-### Option 2: Run with Docker Compose
+**2. Access the Application:**
+- **Frontend Dashboard:** [http://localhost:5173](http://localhost:5173)
+- **API Documentation:** [http://localhost:8080](http://localhost:8080)
 
+---
+
+## 🐳 Running with Docker (Recommended for Full Demo)
+
+Run the entire stack (including real MQTT Broker) in isolated containers.
+
+**1. Start Containers:**
 ```bash
-# Start all services
-docker-compose up -d
-
-# View logs
-docker-compose logs -f
-
-# Stop all services
-docker-compose down
+docker-compose up --build
 ```
 
-### Option 3: Use Makefile
+**2. Access:**
+Everything runs on **localhost:8080** (Backend) and **localhost:5173** (Frontend).
 
-```bash
-make deps    # Install dependencies
-make run     # Run API server
-make test    # Run tests
-make clean   # Clean build artifacts
-```
+---
 
-## 🔑 Demo Credentials
+## � Login Credentials
 
-| Username | Password | Role |
-|----------|----------|------|
-| admin | password123 | Admin |
-| mario | password123 | User |
-| luigi | password123 | User |
-| anna | password123 | User |
-| giorgio | password123 | User |
-| francesca | password123 | User |
+Use these pre-configured accounts for testing:
 
-## 📡 API Endpoints
+| Role | Email | Password |
+|------|-------|----------|
+| **User** | `mario.rossi@email.it` | `password123` |
+| **Admin** | `admin@energypulse.it` | `password123` |
 
-### Authentication (Public)
+---
 
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| POST | `/auth/register` | Create account with house |
-| POST | `/auth/login` | Get JWT token |
-| POST | `/auth/logout` | Invalidate session |
-| POST | `/auth/refresh` | Refresh token |
+## 🛠️ System Components
 
-### User Management (Protected)
+### 1. Frontend (React + TypeScript)
+- **Dashboard:** Real-time energy & price monitoring.
+- **Admin Panel:** User management & system analytics.
+- **Blockchain Ledger:** Immutable transaction audit trail.
+- **Weather Integration:** Live weather data impacting energy usage.
 
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/api/user/profile` | Get current user |
-| PUT | `/api/user/profile` | Update profile |
-| PUT | `/api/user/password` | Change password |
+### 2. Backend (Go / Gin)
+- **API Gateway:** RESTful API for all system operations.
+- **MQTT Service:** Ingests real-time data from smart meters.
+- **ML Engine:** Predicts energy prices based on usage & weather.
+- **Blockchain Simulator:** Logs all predictions for verification.
 
-### House Management (Protected)
+### 3. Simulation
+- **Simulator Service:** Generates realistic usage patterns for active houses.
+- **Smart Logic:** Uses weather + house details (insulation, residents) to vary data.
 
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| POST | `/api/houses` | Create house |
-| GET | `/api/houses` | List houses |
-| GET | `/api/houses/:id` | Get house |
-| PUT | `/api/houses/:id` | Update house |
-| DELETE | `/api/houses/:id` | Archive house |
+## 🧪 Testing Features for Exam
 
-### Predictions (Protected)
-
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/api/predictions` | List predictions |
-| GET | `/api/predictions/:id` | Get prediction |
-| GET | `/api/statistics` | Get statistics |
-
-### Admin (Protected + Admin Role)
-
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/admin/users` | List all users |
-| PUT | `/admin/users/:id/role` | Change user role |
-| GET | `/admin/dashboard` | System statistics |
-
-### Health (Public)
-
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/health` | Health check |
-| GET | `/status` | System status |
-
-## 📊 Database Schema
-
-### Tables (5 total)
-
-1. **users** - User accounts with bcrypt hashed passwords
-2. **sessions** - Active JWT sessions
-3. **households** - Houses with smart meter IDs
-4. **predictions** - Energy price predictions
-5. **blockchain_log** - Blockchain transaction records
-
-## 🔧 Configuration
-
-### Environment Variables
-
-| Variable | Default | Description |
-|----------|---------|-------------|
-| PORT | 8080 | API server port |
-| DB_PATH | data/energy.db | SQLite database path |
-| MQTT_BROKER | tcp://localhost:1883 | MQTT broker URL |
-| MQTT_TOPIC | energy/meters/+ | MQTT subscription topic |
-| JWT_SECRET | (default) | JWT signing secret |
-
-### Example .env file
-
-```env
-PORT=8080
-DB_PATH=data/energy.db
-MQTT_BROKER=tcp://localhost:1883
-JWT_SECRET=your-super-secret-key-change-in-production
-```
-
-## 📁 Project Structure
-
-```
-energy-prediction/
-├── cmd/
-│   ├── api-gateway/main.go      # API server entry point
-│   └── simulator/main.go        # MQTT simulator
-├── internal/
-│   ├── auth/                    # JWT + bcrypt
-│   │   ├── jwt.go
-│   │   ├── password.go
-│   │   └── middleware.go
-│   ├── blockchain/              # Blockchain simulation
-│   │   └── client.go
-│   ├── database/                # GORM + SQLite
-│   │   ├── connection.go
-│   │   └── seeds.go
-│   ├── handlers/                # HTTP handlers
-│   │   ├── auth.go
-│   │   ├── user.go
-│   │   ├── households.go
-│   │   ├── predictions.go
-│   │   └── admin.go
-│   ├── ml/                      # ML model
-│   │   └── model.go
-│   ├── models/                  # Data structures
-│   │   ├── user.go
-│   │   ├── household.go
-│   │   └── prediction.go
-│   └── mqtt/                    # MQTT client
-│       └── subscriber.go
-├── docker/                      # Docker files
-├── data/                        # Database (auto-created)
-├── static/                      # Frontend files
-├── docker-compose.yml
-├── Makefile
-├── go.mod
-└── README.md
-```
-
-## 🎯 Course Topic Alignment
-
-| Lecture Topic | Implementation |
-|---------------|----------------|
-| **Go Programming** | All backend code, goroutines, channels |
-| **MQTT** | Smart meter simulator + subscriber |
-| **REST API** | 18 endpoints with Gin framework |
-| **Authentication** | JWT tokens + bcrypt passwords |
-| **Blockchain** | Simulated Ethereum logging |
-| **Database** | SQLite with GORM ORM |
-| **Microservices** | API Gateway + Simulator |
-
-## 🧪 Testing
-
-```bash
-# Run all tests
-go test -v ./...
-
-# Run with coverage
-go test -coverprofile=coverage.out ./...
-go tool cover -html=coverage.out
-```
-
-## 📄 API Usage Examples
-
-### Register a New User
-
-```bash
-curl -X POST http://localhost:8080/auth/register \
-  -H "Content-Type: application/json" \
-  -d '{
-    "username": "testuser",
-    "password": "password123",
-    "email": "test@example.com",
-    "firstName": "Test",
-    "lastName": "User",
-    "houseName": "My House",
-    "address": "Via Test 1",
-    "city": "Milano",
-    "country": "Italy",
-    "members": 2,
-    "areaSqm": 80,
-    "yearBuilt": 2020
-  }'
-```
-
-### Login
-
-```bash
-curl -X POST http://localhost:8080/auth/login \
-  -H "Content-Type: application/json" \
-  -d '{
-    "username": "mario",
-    "password": "password123"
-  }'
-```
-
-### Get Houses (with token)
-
-```bash
-curl http://localhost:8080/api/houses \
-  -H "Authorization: Bearer YOUR_TOKEN_HERE"
-```
-
-### Get Predictions
-
-```bash
-curl "http://localhost:8080/api/predictions?page=1&limit=10" \
-  -H "Authorization: Bearer YOUR_TOKEN_HERE"
-```
-
-## 📝 License
-
-MIT License - Educational Project
-
-## 🙏 Acknowledgments
-
-- Professor Letterio Galletta for course guidance
-- Anthropic's Claude for development assistance
-- The Go community for excellent libraries
+1. **Verify Blockchain:** Go to `/blockchain` -> Copy any transaction hash -> Click **Verify**.
+2. **Admin Power:** Login as Admin -> Go to Admin Panel -> View Analytics -> Change User Roles.
+3. **Add House:** Go to Houses -> Click **Register New Household** -> Search City (OSM) -> Submit.
+4. **Interactive Graph:** Go to any House Detail -> Hover over the graph to see **Price vs. Consumption**.
