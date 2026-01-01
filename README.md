@@ -20,6 +20,15 @@ EnergyPulse is a production-ready energy price prediction system that demonstrat
 
 ---
 
+## 📚 Detailed Documentation
+
+For a deep dive into how the system works, please refer to:
+*   **[System Flow & Architecture](docs/SYSTEM_FLOW.md)**: Explains the Hybrid Event-Driven/REST architecture.
+*   **[API Documentation](docs/API.md)**: Full list of backend endpoints (Auth, Houses, Predictions).
+*   **[Final Report](final_report.md)**: Comprehensive academic report detailing methodology and results.
+
+---
+
 ## 🏗️ System Architecture
 
 The system follows an Event-Driven Architecture:
@@ -77,7 +86,10 @@ Run the entire stack including the MQTT broker in isolated containers.
 ```bash
 docker-compose up --build
 ```
-Access the dashboard at [http://localhost:5173](http://localhost:5173).
+docker-compose up --build
+```
+Access the dashboard at [http://localhost:3000](http://localhost:3000).
+*Note: The Frontend uses port 3000, API uses 8080, MQTT uses 1883.*
 
 ### Option 2: Local Development (Manual Start)
 If you want to debug individual components:
