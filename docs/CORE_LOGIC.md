@@ -100,3 +100,36 @@ erDiagram
     *   `HouseID` (e.g., `house_001`) is the physical building managed by the user.
     *   `MeterID` (e.g., `household_1`) is the IoT device ID. The Simulator *only* knows the MeterID.
 *   **Soft Deletes**: Deleting a house doesn't remove it from the DB, only marks `deleted_at`, preserving historical energy data.
+
+---
+
+## 4. MQTT Communication Logic (`internal/mqtt`)
+
+While MQTT is a transport protocol, our *implementation logic* is specific to ensuring data integrity and real-time processing.
+
+### Topic Topology
+We use a hierarchical topic structure to allow flexible subscription:
+*   **Format**: `energy/meters/{meter_id}`
+*   **Example**: `energy/meters/household_12`
+*   **Wildcard Subscription**: `energy/meters/+` (The Backend hears *everything*).
+
+### Message Processing Pipeline
+When a message arrives at the Backend, it triggers a synchronous pipeline (`ProcessMeterData`):
+
+1.  **Validation**:
+    *   Finds the House associated with the `meter_id`.
+    *   *Logic Check*: Is the house `active`? If archived, data is ignored.
+2.  **Enrichment**:
+    *   Parses the `timestamp` (RFC3339).
+    *   Simulates "real" weather data if missing.
+3.  **Prediction Trigger**:
+    *   Calls the **ML Engine** (Section 1) to generate a price for this specific reading.
+4.  **Storage**:
+    *   Saves the raw reading + predicted price to SQLite keys.
+5.  **Audit Trigger**:
+    *   Spawns a Goroutine (Async) to log this prediction to the **Blockchain** (Section 2).
+
+### QoS Strategy
+We strictly use **QoS 1 (At Least Once)**.
+*   *Why?* It is better to have duplicate energy readings (which we can deduplicate by timestamp) than to miss a reading entirely.
+

@@ -27,6 +27,7 @@ For a deep dive into how the system works, please refer to:
 *   **[API Documentation](docs/API.md)**: Full list of backend endpoints (Auth, Houses, Predictions).
 *   **[Core Logic Deep Dive](docs/CORE_LOGIC.md)**: Explanations of ML Algorithms, Blockchain Hashing, and DB Schema.
 *   **[Tech Stack & Theory](docs/TECHNOLOGY_THEORY.md)**: "Why we used MQTT/Go/Docker" - Design decisions.
+*   **[Project Structure](docs/PROJECT_STRUCTURE.md)**: Map of folders and files.
 *   **[Final Report](final_report.md)**: Comprehensive academic report detailing methodology and results.
 
 ---
