@@ -79,13 +79,13 @@ To satisfy the requirement of "Trustless Systems," we implemented a **Simulated 
 
 ---
 
-## **4. Gap Analysis and Future Work**
+## **4. Technical Constraints & Future Work**
 
-While the system is fully functional for the project requirements, the following areas represent simulations or potential improvements for a commercial release:
+While the system is fully functional for the project requirements, the following areas represent potential improvements for a commercial-scale release:
 
-*   **MQTT Broker:** Currently requires the Docker container to be active. In a production scenario, this would be a clustered broker (e.g., HiveMQ).
-*   **Blockchain:** The current implementation is an *internal* simulation. For production, this would connect to the Ethereum Mainnet or a Layer-2 solution (Polygon) using `go-ethereum`.
-*   **WebSockets:** The dashboard currently polls or refreshes for data. Implementing WebSockets would push updates to the UI in true real-time (millisecond latency).
+*   **Production Deployment:** Currently, the system uses a single Docker node. In production, the MQTT Broker would be clustered (e.g., HiveMQ), and the API Gateway would be horizontally scaled behind a Load Balancer (Nginx).
+*   **Blockchain Integration:** The current implementation uses a local simulation (`internal/blockchain`). For a real-world deployment, this module would be replaced with `go-ethereum` bindings to connect to a private Ethereum testnet or L2 solution like Polygon.
+*   **WebSockets:** The dashboard currently relies on optimized polling. Implementing WebSockets would push updates to the UI in true real-time (millisecond latency).
 
 ---
 

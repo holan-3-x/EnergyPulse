@@ -1,77 +1,165 @@
-# EnergyPulse - Smart Energy Prediction System
+# EnergyPulse - Distributed Energy Price Prediction System
 
-A comprehensive Distributed Energy Resource (DER) management system with AI-driven price prediction, IoT smart meter simulation, and blockchain auditing.
-
-## 🚀 Quick Start (Local Development)
-
-The easiest way to run the full system including Frontend, Backend, and MQTT Simulation.
-
-**Prerequisites:**
-- [Go 1.22+](https://go.dev/dl/)
-- [Node.js 18+](https://nodejs.org/)
-
-**1. Start the System:**
-Open your terminal and run the all-in-one start script:
-```bash
-./start.sh
-```
-This script will automatically:
-- Start the Go Backend Server (API Gateway)
-- Start the Smart Meter Simulator
-- Start the React Frontend
-
-**2. Access the Application:**
-- **Frontend Dashboard:** [http://localhost:5173](http://localhost:5173)
-- **API Documentation:** [http://localhost:8080](http://localhost:8080)
+**Course:** Distributed Programming for Web, IoT and Mobile Systems 2025-2026  
+**Professor:** Letterio Galletta  
+**Student:** Holan Omeed Kunimohammed (7193994)
 
 ---
 
-## 🐳 Running with Docker (Recommended for Full Demo)
+## 📋 Project Overview
 
-Run the entire stack (including real MQTT Broker) in isolated containers.
+EnergyPulse is a production-ready energy price prediction system that demonstrates key concepts from the distributed systems course. It simulates a Smart Grid environment where "Prosumers" monitor consumption, receive AI-driven price forecasts, and verify data integrity via a blockchain ledger.
 
-**1. Start Containers:**
+### **Core Demonstrated Concepts**
+- **MQTT (Pub/Sub)**: Decoupled IoT communication using the Paho library and Mosquitto broker.
+- **Microservices Architecture**: Separate services for API Gateway, Simulation, and Message Broking.
+- **RESTful API**: 18+ endpoints built with the Gin framework.
+- **Digital Twins**: Simulation of 20+ smart meters with realistic usage profiles.
+- **Blockchain**: Immutable transaction logging for data verification (Simulated Ethereum Layer).
+- **Authentication**: Stateless JWT security with Role-Based Access Control (RBAC).
+
+---
+
+## 🏗️ System Architecture
+
+The system follows an Event-Driven Architecture:
+
+```
+┌──────────────────────────────────────────────────────────────────┐
+│                        Frontend (React)                          │
+│                    http://localhost:3000                         │
+└──────────────────────────────────────────────────────────────────┘
+                              │ REST API
+                              ▼
+┌──────────────────────────────────────────────────────────────────┐
+│                     API Gateway (Go + Gin)                       │
+│                    http://localhost:8080                         │
+│  [Auth] [Houses] [Predictions] [Blockchain] [Admin] [Weather]    │
+│  └────────────────────────────────────────────────────────────┘  │
+│         │                │                │                      │
+│         └────────────────┼────────────────┘                      │
+│                          ▼                                       │
+│                   ┌─────────────┐                                │
+│                   │   SQLite    │                                │
+│                   │  Database   │                                │
+│                   └─────────────┘                                │
+└──────────────────────────────────────────────────────────────────┘
+                              │
+                              │ MQTT Subscribe (Topic: energy/meters/+)
+                              ▼
+┌──────────────────────────────────────────────────────────────────┐
+│                    MQTT Broker (Mosquitto)                       │
+│                    tcp://localhost:1883                          │
+└──────────────────────────────────────────────────────────────────┘
+                              ▲
+                              │ MQTT Publish
+                              │
+┌──────────────────────────────────────────────────────────────────┐
+│                  Smart Meter Simulator (Go)                      │
+│                    20 simulated IoT meters                       │
+└──────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+## 🚀 Quick Start
+
+You can run the full system using Docker (Recommended) or locally.
+
+### Prerequisites
+- [Go 1.22+](https://go.dev/dl/)
+- [Node.js 18+](https://nodejs.org/)
+- [Docker & Docker Compose](https://www.docker.com/)
+
+### Option 1: Docker (Full System)
+Run the entire stack including the MQTT broker in isolated containers.
+
 ```bash
 docker-compose up --build
 ```
+Access the dashboard at [http://localhost:5173](http://localhost:5173).
 
-**2. Access:**
-Everything runs on **localhost:8080** (Backend) and **localhost:5173** (Frontend).
+### Option 2: Local Development (Manual Start)
+If you want to debug individual components:
+
+1. **Start MQTT Broker (Required):**
+   ```bash
+   docker-compose up -d mqtt
+   ```
+
+2. **Start Backend API:**
+   ```bash
+   go run cmd/api-gateway/main.go
+   ```
+
+3. **Start Simulator:**
+   ```bash
+   go run cmd/simulator/main.go
+   ```
+
+4. **Start Frontend:**
+   ```bash
+   cd static && npm run dev
+   ```
 
 ---
 
-## � Login Credentials
+## 🔑 Login Credentials
 
-Use these pre-configured accounts for testing:
+The system comes pre-seeded with these accounts:
 
-| Role | Email | Password |
-|------|-------|----------|
-| **User** | `mario.rossi@email.it` | `password123` |
-| **Admin** | `admin@energypulse.it` | `password123` |
+| Role | Email | Password | Access |
+|------|-------|----------|--------|
+| **Admin** | `admin@energypulse.it` | `password123` | System Dashboard, User Management |
+| **User** | `mario.rossi@email.it` | `password123` | Personal House, Predictions |
+| **User** | `luigi.verdi@email.it` | `password123` | Personal House, Predictions |
 
 ---
 
-## 🛠️ System Components
+## 🧪 Key Application Features (Exam Demo)
 
-### 1. Frontend (React + TypeScript)
-- **Dashboard:** Real-time energy & price monitoring.
-- **Admin Panel:** User management & system analytics.
-- **Blockchain Ledger:** Immutable transaction audit trail.
-- **Weather Integration:** Live weather data impacting energy usage.
+1.  **Distributed IoT Simulation**: 
+    - Observations: Check the terminal logs of the `simulator`. It pushes data every 2 seconds.
+    - Verification: Backend logs `Received data from meter...`
 
-### 2. Backend (Go / Gin)
-- **API Gateway:** RESTful API for all system operations.
-- **MQTT Service:** Ingests real-time data from smart meters.
-- **ML Engine:** Predicts energy prices based on usage & weather.
-- **Blockchain Simulator:** Logs all predictions for verification.
+2.  **Blockchain Verification**:
+    - Go to **Blockchain Ledger** in the sidebar.
+    - Copy a **Transaction Hash** from the table.
+    - Paste it into the **Transaction Verifier** at the top.
+    - Result: The system cryptographically verifies the record exists and hasn't been tampered with.
 
-### 3. Simulation
-- **Simulator Service:** Generates realistic usage patterns for active houses.
-- **Smart Logic:** Uses weather + house details (insulation, residents) to vary data.
+3.  **Admin Capabilities**:
+    - Login as Admin.
+    - View **System Households** to see all data across the grid.
+    - Change user roles or delete households.
 
-## 🧪 Testing Features for Exam
+4.  **Resilience**:
+    - Stop the backend (`Ctrl+C`). The Simulator continues publishing to MQTT (Broker queues messages).
+    - Restart backend. It reconnects and resumes processing.
 
-1. **Verify Blockchain:** Go to `/blockchain` -> Copy any transaction hash -> Click **Verify**.
-2. **Admin Power:** Login as Admin -> Go to Admin Panel -> View Analytics -> Change User Roles.
-3. **Add House:** Go to Houses -> Click **Register New Household** -> Search City (OSM) -> Submit.
-4. **Interactive Graph:** Go to any House Detail -> Hover over the graph to see **Price vs. Consumption**.
+---
+
+## 📁 Project Structure
+
+```
+energy-prediction/
+├── cmd/
+│   ├── api-gateway/         # Main Backend Entrypoint
+│   └── simulator/           # IoT Smart Meter Simulator
+├── internal/
+│   ├── blockchain/          # Ledger Implementation
+│   ├── handlers/            # HTTP Controllers
+│   ├── ml/                  # Price Prediction Logic
+│   ├── models/              # Data Structs (GORM)
+│   ├── mqtt/                # Pub/Sub Logic
+│   └── weather/             # OpenMeteo Integration
+├── static/                  # React Frontend (Vite)
+├── docker/                  # Docker Configs
+├── docker-compose.yml       # Orchestration
+└── go.mod                   # Dependencies
+```
+
+---
+
+## 📝 License
+MIT License - Educational Project for Distributed Systems Course.
