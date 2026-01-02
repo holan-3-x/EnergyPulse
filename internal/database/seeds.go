@@ -22,7 +22,7 @@ func SeedDummyData() error {
 		return nil
 	}
 
-	log.Println("Seeding Italian demo data...")
+	log.Println("Seeding demo data...")
 
 	// Hash password for all demo users (password: "password123")
 	passwordHash, err := bcrypt.GenerateFromPassword([]byte("password123"), bcrypt.DefaultCost)
@@ -35,7 +35,7 @@ func SeedDummyData() error {
 		Username:     "admin",
 		PasswordHash: string(passwordHash),
 		Email:        "admin@energypulse.it",
-		FirstName:    "Marco",
+		FirstName:    "Holan",
 		LastName:     "Amministratore",
 		Phone:        "+39 02 1234 5678",
 		Role:         models.RoleAdmin,
