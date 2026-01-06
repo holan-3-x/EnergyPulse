@@ -50,7 +50,9 @@ run-all:
 clean:
 	@echo "🧹 Cleaning..."
 	rm -rf bin/
-	rm -f data/energy.db
+	rm -f data/*.db
+	rm -f *.db
+	rm -f coverage.out coverage.html
 	@echo "✓ Cleaned"
 
 # Run tests

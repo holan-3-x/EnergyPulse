@@ -1,5 +1,5 @@
 ================================================================================
-ENERGY PRICE PREDICTION SYSTEM - PROJECT OVERVIEW
+ENERGY PREDICTION SYSTEM - PROJECT OVERVIEW
 ================================================================================
 
 SYSTEM SUMMARY

@@ -14,15 +14,29 @@ import (
 
 func TestUserRegistration(t *testing.T) {
 	// Setup
+	SetupTestDB()
+	defer TeardownTestDB()
+
 	gin.SetMode(gin.TestMode)
 	router := gin.Default()
 	router.POST("/auth/register", handlers.Register)
 
 	// Payload
-	payload := map[string]string{
-		"email":    "testuser@example.com",
-		"password": "Password123!",
-		"role":     "user",
+	payload := map[string]interface{}{
+		"email":       "testuser@example.com",
+		"password":    "Password123!",
+		"role":        "user",
+		"username":    "testuser",
+		"firstName":   "Test",
+		"lastName":    "User",
+		"houseName":   "Test House",
+		"address":     "123 Test St",
+		"city":        "Test City",
+		"country":     "Test Country",
+		"members":     2,
+		"areaSqm":     100,
+		"yearBuilt":   2000,
+		"heatingType": "Gas",
 	}
 	jsonValue, _ := json.Marshal(payload)
 

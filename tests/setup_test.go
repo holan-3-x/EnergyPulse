@@ -5,6 +5,7 @@ import (
 	"os"
 	"time"
 
+	"energy-prediction/internal/database"
 	"energy-prediction/internal/models"
 
 	"gorm.io/driver/sqlite"
@@ -21,9 +22,10 @@ func SetupTestDB() {
 	}
 
 	// Migrate the schema
-	db.AutoMigrate(&models.User{}, &models.Household{}, &models.Prediction{})
+	db.AutoMigrate(&models.User{}, &models.Household{}, &models.Prediction{}, &models.Session{})
 
 	testDB = db
+	database.DB = db
 }
 
 func TeardownTestDB() {
