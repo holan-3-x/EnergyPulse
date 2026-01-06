@@ -225,8 +225,8 @@ energy/meters/+
 5. Parse JSON payload → MeterReading struct
 6. Save to database → repository.CreateReading()
 7. Fetch weather data → OpenMeteo API
-8. Calculate prediction → internal/ml/predictor.go
-9. Log to blockchain → internal/blockchain/block.go
+8. Calculate prediction → internal/ml/model.go
+9. Log to blockchain → internal/blockchain/client.go
 10. Store prediction → database
 11. Frontend polls/fetches → GET /api/predictions
 ```
@@ -498,7 +498,7 @@ client.Publish("energy/meters/meter-001", 0, false, payload)
 
 #### 5.2.1 RESTful API Design ✓
 - **Implementation:** 18+ endpoints following REST conventions
-- **File:** `internal/routes/routes.go`
+- **File:** `cmd/api-gateway/main.go`
 
 **Endpoints by Resource:**
 
@@ -524,7 +524,7 @@ client.Publish("energy/meters/meter-001", 0, false, payload)
 - **Content Negotiation:** JSON (application/json)
 
 #### 5.2.3 CORS (Cross-Origin Resource Sharing) ✓
-- **Implementation:** `internal/routes/routes.go` - CORS middleware
+- **Implementation:** `cmd/api-gateway/main.go` - CORS middleware
 - **Configuration:**
 ```go
 config := cors.DefaultConfig()
@@ -629,9 +629,9 @@ db.AutoMigrate(&models.User{}, &models.House{}, &models.MeterReading{})
 #### 5.6.1 Docker ✓
 - **Multi-stage Builds:** Optimized Go binary images
 - **Dockerfiles:**
-  - `docker/api-gateway.Dockerfile`
-  - `docker/simulator.Dockerfile`
-  - `docker/frontend.Dockerfile`
+  - `docker/Dockerfile.api`
+  - `docker/Dockerfile.simulator`
+  - `docker/Dockerfile.frontend`
 
 **Example Multi-stage Build:**
 ```dockerfile
@@ -673,7 +673,7 @@ services:
 
 #### 5.7.1 Blockchain Concepts ✓
 - **Purpose:** Immutable transaction logging (educational demonstration)
-- **Implementation:** `internal/blockchain/block.go`
+- **Implementation:** `internal/blockchain/client.go`
 - **Algorithm:** SHA-256 hashing
 - **Chain Structure:** Each block references previous hash
 
@@ -705,7 +705,7 @@ go mqtt.StartSubscriber(brokerURL)
   - Current weather (temperature, wind)
   - Time of day
   - Day of week
-- **Implementation:** `internal/ml/predictor.go`
+- **Implementation:** `internal/ml/model.go`
 
 **Simplified Formula:**
 ```
@@ -870,8 +870,8 @@ Dashboard Updates
 2. `internal/mqtt/subscriber.go:messageHandler()` - Receive message
 3. `internal/mqtt/subscriber.go:handleMeterReading()` - Process data
 4. `internal/repository/reading.go:CreateReading()` - Save to DB
-5. `internal/ml/predictor.go:PredictPrice()` - ML calculation
-6. `internal/blockchain/block.go:AddBlock()` - Hash transaction
+5. `internal/ml/model.go:PredictPrice()` - ML calculation
+6. `internal/blockchain/client.go:LogPrediction()` - Hash transaction
 7. Frontend polls `GET /api/predictions/:id`
 8. `internal/handlers/prediction.go:GetPredictions()` - Return data
 
@@ -945,7 +945,7 @@ Response: 200 OK
 
 1. `static/pages/Admin.tsx` - Admin dashboard
 2. `static/services/admin.ts:deleteUser()` - API call with JWT
-3. `internal/routes/routes.go` - Route with middleware chain:
+3. `cmd/api-gateway/main.go` - Route with middleware chain:
    ```go
    admin.DELETE("/users/:id", 
        middleware.AuthRequired(),
@@ -994,7 +994,7 @@ internal/
 │   ├── jwt.go               # JWT token generation & validation
 │   └── password.go          # Password hashing (bcrypt)
 ├── blockchain/
-│   └── block.go             # Blockchain implementation
+│   └── client.go            # Blockchain implementation
 ├── database/
 │   └── connection.go        # Database initialization
 ├── handlers/
@@ -1015,7 +1015,7 @@ internal/
 │   ├── house.go             # House database operations
 │   └── reading.go           # Reading database operations
 └── routes/
-    └── routes.go            # Route definitions
+    └── main.go              # Route definitions
 ```
 
 #### 7.1.2 Main Entry Point Analysis
@@ -1029,7 +1029,7 @@ import (
     "log"
     "github.com/gin-gonic/gin"
     "energypulse/internal/database"
-    "energypulse/internal/routes"
+    "energypulse/cmd/api-gateway"
     "energypulse/internal/mqtt"
 )
 
@@ -1573,7 +1573,7 @@ docker-compose up --build
 **Step 4: Access the Application**
 - Frontend: http://localhost:3000
 - API: http://localhost:8080
-- MQTT Broker: tcp://localhost:1883
+- MQTT Broker: tcp://localhost:1883 (WebSockets on 9001)
 
 **Step 5: Test with Demo Credentials**
 ```
@@ -1740,7 +1740,7 @@ open http://localhost:3000
 |-------|----------------|----------|
 | Port 8080 already in use | Another service using port | `lsof -i :8080`, kill process |
 | MQTT connection refused | Broker not started | Check `docker-compose logs mqtt-broker` |
-| Frontend can't reach API | CORS misconfiguration | Verify CORS settings in routes.go |
+| Frontend can't reach API | CORS misconfiguration | Verify CORS settings in cmd/api-gateway/main.go |
 | JWT token invalid | Wrong secret key | Match JWT_SECRET in .env and code |
 | Database locked | Multiple instances | Stop all containers, restart |
 
@@ -2347,15 +2347,20 @@ The hybrid architecture combining event-driven (MQTT) and RESTful patterns prove
 
 ### Books & Articles
 
-14. **Designing Data-Intensive Applications**
+14. **Distributed Systems**
+    - Authors: Andrew S. Tanenbaum and Maarten van Steen
+    - URL: https://www.distributed-systems.net/index.php/books/ds4/
+    - Topics: Principles, Architectures, Communication, Naming, Consistency
+
+15. **Designing Data-Intensive Applications**
     - Author: Martin Kleppmann
     - Topics: Distributed systems, data modeling, scalability
 
-15. **Building Microservices**
+16. **Building Microservices**
     - Author: Sam Newman
     - Topics: Microservices architecture, service boundaries
 
-16. **RESTful API Design Best Practices**
+17. **RESTful API Design Best Practices**
     - Microsoft REST API Guidelines
     - URL: https://github.com/microsoft/api-guidelines
 

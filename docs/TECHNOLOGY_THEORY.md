@@ -55,4 +55,22 @@ We defined the entire environment in `docker-compose.yml`.
 ### Why Blockchain for Energy?
 *   **Trustlessness**: In a real grid, consumers don't trust the energy company's pricing.
 *   **Immutability**: Once a transaction is hashed on the ledger, it cannot be changed. This provides a "Proof of Pricing" that can be audited later.
-*   **Smart Contracts**: We simulate a contract address that validates if a reading is within acceptable bounds before confirming it.
+
+---
+
+## 6. References
+
+1.  **Distributed Systems** (4th Edition)
+    *   Authors: Andrew S. Tanenbaum, Maarten van Steen
+    *   Chapters: 1 (Introduction), 4 (Communication), 6 (Coordination)
+    *   Relevance: Architectural choices and MQTT pub/sub theory.
+    *   URL: [distributed-systems.net](https://www.distributed-systems.net/index.php/books/ds4/)
+
+2.  **MQTT 3.1.1 Specification**
+    *   Organization: OASIS
+    *   Relevance: Protocol implementation details and QoS levels.
+    *   URL: [mqtt.org](https://mqtt.org/mqtt-specification/)
+
+3.  **The Go Programming Language Specification**
+    *   Relevance: Goroutines and Channel concurrency patterns.
+    *   URL: [go.dev](https://go.dev/ref/spec)

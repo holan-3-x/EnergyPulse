@@ -133,3 +133,22 @@ When a message arrives at the Backend, it triggers a synchronous pipeline (`Proc
 We strictly use **QoS 1 (At Least Once)**.
 *   *Why?* It is better to have duplicate energy readings (which we can deduplicate by timestamp) than to miss a reading entirely.
 
+---
+
+## 5. References
+
+1.  **Secure Hash Standard (SHS)**
+    *   Standard: FIPS 180-4
+    *   Organization: NIST
+    *   Relevance: Implementation of SHA-256 for blockchain hashing.
+
+2.  **Ethereum Whitepaper**
+    *   Author: Vitalik Buterin
+    *   Relevance: Basis for the simulated "Gas" and "Smart Contract" logic.
+    *   URL: [ethereum.org](https://ethereum.org/en/whitepaper/)
+
+3.  **Go Crypto Package**
+    *   Library: `crypto/sha256`
+    *   Relevance: Cryptographic primitives used in `internal/blockchain`.
+    *   URL: [pkg.go.dev](https://pkg.go.dev/crypto/sha256)
+

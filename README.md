@@ -92,7 +92,7 @@ docker-compose up --build
 docker-compose up --build
 ```
 Access the dashboard at [http://localhost:3000](http://localhost:3000).
-*Note: The Frontend uses port 3000, API uses 8080, MQTT uses 1883.*
+*Note: The Frontend uses port 3000, API uses 8080, MQTT uses 1883 (and 9001 for WebSockets).*
 
 ### Option 2: Local Development (Manual Start)
 If you want to debug individual components:
@@ -159,17 +159,20 @@ The system comes pre-seeded with these accounts:
 ```
 energy-prediction/
 ├── cmd/
-│   ├── api-gateway/         # Main Backend Entrypoint
+│   ├── api-gateway/         # Main Backend Entrypoint (Route definitions here)
 │   └── simulator/           # IoT Smart Meter Simulator
 ├── internal/
-│   ├── blockchain/          # Ledger Implementation
+│   ├── blockchain/          # Ledger Implementation (client.go)
 │   ├── handlers/            # HTTP Controllers
-│   ├── ml/                  # Price Prediction Logic
+│   ├── ml/                  # Price Prediction Logic (model.go)
 │   ├── models/              # Data Structs (GORM)
 │   ├── mqtt/                # Pub/Sub Logic
 │   └── weather/             # OpenMeteo Integration
 ├── static/                  # React Frontend (Vite)
 ├── docker/                  # Docker Configs
+│   ├── Dockerfile.api
+│   ├── Dockerfile.frontend
+│   └── Dockerfile.simulator
 ├── docker-compose.yml       # Orchestration
 └── go.mod                   # Dependencies
 ```

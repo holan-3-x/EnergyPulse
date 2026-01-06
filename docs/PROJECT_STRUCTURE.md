@@ -18,7 +18,7 @@ This document provides a detailed map of the codebase to help you navigate the p
 | `go.mod` / `go.sum` | Go dependency definitions. |
 | `Makefile` | Shortcuts for common commands. |
 | `README.md` | Main project entry point. |
-| `final_report.md` | Academic report for the exam. |
+| `final_reportv2.md` | Academic report for the exam. |
 
 ---
 
@@ -29,7 +29,7 @@ The Go backend is organized by "Domain":
 ```
 internal/
 ├── auth/           # JWT Token generation & Hashing
-├── blockchain/     # Simulated Ledger Implementation
+├── blockchain/     # Simulated Blockchain Client
 ├── database/       # SQLite connection & Seeding logic
 ├── handlers/       # HTTP API Controllers (Gin)
 ├── ml/             # Price Prediction Algorithms
@@ -59,9 +59,9 @@ static/
 
 ```
 docker/
-├── Dockerfile.api        # Go Backend image
-├── Dockerfile.simulator  # Go Simulator image
-├── Dockerfile.frontend   # Node.js/React image
+├── api-gateway.Dockerfile   # Go Backend image
+├── simulator.Dockerfile     # Go Simulator image
+├── frontend.Dockerfile      # Node.js/React image
 └── mosquitto.conf        # MQTT Broker config
 ```
 
