@@ -483,15 +483,15 @@ This section demonstrates how the project implements concepts from the course sy
   - Publisher: `cmd/simulator/main.go` (lines 45-60)
   - Subscriber: `internal/mqtt/subscriber.go` (lines 20-45)
 - **Topics:** `energy/meters/+` with wildcard subscription
-- **QoS Level:** 0 (at most once delivery)
+- **QoS Level:** 1 (at least once delivery)
 
 **Code Evidence:**
 ```go
 // Subscriber
-client.Subscribe("energy/meters/+", 0, messageHandler)
+client.Subscribe("energy/meters/+", 1, messageHandler)
 
 // Publisher
-client.Publish("energy/meters/meter-001", 0, false, payload)
+client.Publish("energy/meters/meter-001", 1, false, payload)
 ```
 
 ### 5.2 Web Technologies
