@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_URL = 'http://localhost:8080'; // Backend has mixed /auth and /api prefixes
+const API_URL = import.meta.env.VITE_API_URL || `${window.location.protocol}//${window.location.hostname}:8080`; // Falls back to current hostname:8080
 
 const api = axios.create({
   baseURL: API_URL,
