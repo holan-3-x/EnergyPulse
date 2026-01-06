@@ -90,7 +90,7 @@ Run the entire stack including the MQTT broker in isolated containers.
 docker-compose up --build
 ```
 docker-compose up --build
-```
+
 Access the dashboard at [http://localhost:3000](http://localhost:3000).
 *Note: The Frontend uses port 3000, API uses 8080, MQTT uses 1883 (and 9001 for WebSockets).*
 
