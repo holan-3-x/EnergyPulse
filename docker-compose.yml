@@ -6,7 +6,7 @@ version: '3.8'
 services:
   # MQTT Broker (Mosquitto)
   mqtt:
-    image: eclipse-mosquitto:2
+    image: eclipse-mosquitto:latest
     container_name: energypulse-mqtt
     ports:
       - "1883:1883"
