@@ -30,14 +30,14 @@
 
 ## 1. Executive Summary
 
-EnergyPulse is a distributed energy price prediction system designed for smart home environments. The system leverages IoT sensors (smart meters) to collect real-time energy consumption data via MQTT protocol, processes this data through a microservices architecture, and provides predictive analytics for energy pricing using machine learning algorithms. The platform integrates blockchain-inspired transaction logging for data immutability and features a responsive web interface for user interaction.
+EnergyPulse is a distributed energy price prediction system designed for smart home environments. The system leverages IoT sensors (smart meters) to collect real-time energy consumption data via MQTT protocol, processes this data through a microservices architecture, and provides predictive analytics for energy pricing using a rule-based decision tree model. The platform integrates a **simulated blockchain** for transaction logging (demonstrating the concept without a real Ethereum connection) and features a responsive web interface for user interaction.
 
 **Key Features:**
 - Real-time MQTT-based IoT data collection from 20+ simulated smart meters
 - Microservices architecture with three independent services
 - RESTful API with JWT-based authentication and role-based access control (RBAC)
-- Machine learning-powered energy price prediction
-- Blockchain-inspired immutable transaction logging
+- Rule-based predictive model for energy pricing (simulates ML decision tree)
+- **Simulated blockchain** for immutable transaction logging (educational demonstration)
 - Docker-based containerized deployment
 - React-based responsive dashboard
 
@@ -62,7 +62,7 @@ EnergyPulse addresses these challenges by providing:
 
 1. **IoT Integration:** MQTT-based real-time data collection from smart meters
 2. **Distributed Architecture:** Scalable microservices design for independent service scaling
-3. **Predictive Analytics:** ML-powered price forecasting considering consumption, weather, and time factors
+3. **Predictive Analytics:** Rule-based price forecasting considering consumption, weather, time-of-day, and regional factors (decision tree approach)
 4. **Data Integrity:** Blockchain-inspired hashing for transaction verification
 5. **Secure Access:** JWT authentication with role-based permissions
 6. **User Experience:** Modern React dashboard with real-time updates
@@ -189,7 +189,7 @@ HTTP Request → CORS → JWT Auth → RBAC → Handler → Response
 
 - Simulator → MQTT Broker: Publish meter readings
 - API Gateway ← MQTT Broker: Subscribe to meter data
-- QoS Level 0 (fire-and-forget) for high throughput
+- QoS Level 1 (at-least-once) for reliable delivery
 
 **MQTT Topic Structure:**
 ```
@@ -225,8 +225,8 @@ energy/meters/+
 5. Parse JSON payload → MeterReading struct
 6. Save to database → repository.CreateReading()
 7. Fetch weather data → OpenMeteo API
-8. Calculate prediction → internal/ml/model.go
-9. Log to blockchain → internal/blockchain/client.go
+8. Calculate prediction → internal/ml/model.go (rule-based decision tree)
+9. Log to blockchain → internal/blockchain/client.go (simulated)
 10. Store prediction → database
 11. Frontend polls/fetches → GET /api/predictions
 ```
@@ -300,6 +300,58 @@ CREATE TABLE blockchain_transactions (
 7. Extract claims → user_id, role stored in context
 8. Handler accesses → c.Get("userID")
 ```
+
+#### 3.6.1 Session Lifecycle Management
+
+**Token-Based Session Architecture:**
+
+As discussed in the course lectures on "Handling and Processing Requests," session management is critical for web applications. EnergyPulse implements a stateless session model using JWT tokens rather than server-side session cookies.
+
+**Session States:**
+
+| State | Description | Transition |
+|-------|-------------|------------|
+| Unauthenticated | No valid token present | → Login/Register |
+| Active | Valid JWT token (<24 hours) | → Expired / Logout |
+| Expired | Token past expiration time | → Re-authenticate |
+
+**Session Operations:**
+
+1. **Session Creation (Login/Register):**
+   ```go
+   // Token generated with 24-hour expiration
+   claims := Claims{
+       UserID: user.ID,
+       Role:   user.Role,
+       RegisteredClaims: jwt.RegisteredClaims{
+           ExpiresAt: jwt.NewNumericDate(time.Now().Add(24 * time.Hour)),
+           IssuedAt:  jwt.NewNumericDate(time.Now()),
+       },
+   }
+   ```
+
+2. **Session Validation (Each Request):**
+   - Middleware extracts token from `Authorization: Bearer <token>` header
+   - Validates signature using HMAC-SHA256
+   - Checks expiration timestamp
+   - Extracts claims into request context
+
+3. **Session Termination (Logout):**
+   - Client-side token deletion from localStorage
+   - Stateless design means no server-side session invalidation required
+
+4. **Concurrent Sessions:**
+   - Multiple devices can hold valid tokens simultaneously
+   - Each token is independently validated
+
+**Security Considerations:**
+
+> **Note:** As highlighted in course lectures on cookie security, storing tokens in localStorage is vulnerable to XSS attacks. For production deployment, HTTP-only cookies with SameSite attribute would be recommended, combined with CSRF protection. The current implementation prioritizes simplicity for demonstration purposes.
+
+**Production Enhancements (Future Work):**
+- **Token Blacklist:** Redis-based blacklist for immediate token revocation
+- **Refresh Tokens:** Short-lived access tokens with long-lived refresh tokens
+- **Secure Cookie Storage:** HTTP-only cookies with AES-GCM encryption as discussed in course material on authenticated encryption
 
 #### Role-Based Access Control (RBAC):
 
@@ -502,27 +554,236 @@ if err := json.Unmarshal(msg.Payload(), &reading); err != nil { ... }
 
 ### 5.4 IoT Protocols (Syllabus Topic 12)
 
-#### 5.4.1 MQTT Implementation
-- **Standard:** MQTT 3.1.1 via Eclipse Mosquitto.
-- **Client Library:** `github.com/eclipse/paho.mqtt.golang` (Standard Go client).
-- **QoS Level:** 1 (At Least Once) - Ensuring data integrity for billing.
-- **Topic Structure:** Hierarchical `energy/meters/{id}` with Wildcard `+` subscription.
+#### 5.4.1 MQTT Protocol Implementation
 
-### 5.5 Coordination & Distributed Algorithms (Syllabus Topic 8 & 9)
+**Standard:** MQTT 3.1.1 via Eclipse Mosquitto broker.
 
-#### 5.5.1 Time Synchronization
-- **Implementation:** Uses NTP-synchronized server timestamps (RFC3339) for all energy readings to ensure partial ordering of events.
+**Client Library:** `github.com/eclipse/paho.mqtt.golang` - the standard Go client for MQTT.
 
-#### 5.5.2 Future Enhancements (Syllabus Alignment)
-- **Vector Clocks:** Could be implemented to detect causality violations in distributed meter readings.
-- **Leader Election:** If scaling to multiple simulator nodes, the **Bully Algorithm** would be used to elect a master node for aggregate reporting.
+**Quality of Service (QoS) Selection:**
+
+As covered in the MQTT lecture slides, MQTT provides three QoS levels representing different delivery guarantees:
+
+| QoS Level | Name | Guarantee | Use Case |
+|-----------|------|-----------|----------|
+| 0 | At Most Once | Best effort, no ACK | Telemetry where occasional loss is acceptable |
+| 1 | At Least Once | Guaranteed delivery, possible duplicates | **EnergyPulse choice** |
+| 2 | Exactly Once | Guaranteed single delivery | Financial transactions |
+
+**Why QoS Level 1 for EnergyPulse:**
+
+EnergyPulse uses **QoS Level 1 (At Least Once)** for the following reasons:
+
+1. **Data Integrity for Billing:** Energy consumption readings are used for price predictions and potential billing calculations. Lost readings would compromise accuracy.
+
+2. **Duplicate Handling:** The system can tolerate duplicate messages since readings are timestamped and idempotent storage can be implemented.
+
+3. **Broker Storage:** With QoS 1, the Mosquitto broker stores messages until acknowledged, ensuring delivery even if the API Gateway temporarily disconnects.
+
+4. **Performance Balance:** QoS 2's four-way handshake (PUBLISH → PUBREC → PUBREL → PUBCOMP) would add unnecessary latency for high-frequency sensor data.
+
+**MQTT Message Flow (QoS 1):**
+
+```
+Simulator                    Broker                    API Gateway
+    |                          |                           |
+    |------ PUBLISH QoS 1 ---->|                           |
+    |<-------- PUBACK ---------|                           |
+    |                          |------ PUBLISH QoS 1 ----->|
+    |                          |<-------- PUBACK ----------|
+    |                          |                           |
+```
+
+**Topic Structure:**
+
+Hierarchical topic design following MQTT best practices:
+
+```
+energy/meters/+          ← Wildcard subscription (API Gateway)
+  ├── energy/meters/meter-001
+  ├── energy/meters/meter-002
+  └── ... (20 meters total)
+```
+
+**Retained Messages:**
+
+As noted in course lectures, publishers have no guarantee messages reach subscribers unless using retained messages or QoS levels 1-2. EnergyPulse uses QoS 1 to guarantee delivery to the broker, and the broker guarantees delivery to subscribers.
+
+**Code Implementation:**
+
+```go
+// Publisher (Simulator) - QoS 1
+token := client.Publish("energy/meters/"+meterID, 1, false, payload)
+token.Wait()
+
+// Subscriber (API Gateway) - QoS 1
+client.Subscribe("energy/meters/+", 1, messageHandler)
+```
+
+### 5.5 Coordination & Distributed Algorithms (Syllabus Topics 8 & 9)
+
+**Course Reference:** Chapter 6 of "Distributed Systems" by van Steen and Tanenbaum, as cited in the Synchronization lecture.
+
+#### 5.5.1 Time Synchronization in EnergyPulse
+
+**Problem:** In distributed systems, each node has its own local clock. Without synchronization, ordering events across nodes becomes impossible.
+
+**EnergyPulse Solution:** 
+
+The system uses **physical clock synchronization** via NTP (Network Time Protocol):
+
+1. **Server-Side Timestamps:** All energy readings receive timestamps from the API Gateway server, which synchronizes with NTP servers.
+
+2. **RFC3339 Format:** Timestamps use ISO 8601 format for unambiguous representation:
+   ```go
+   timestamp := time.Now().UTC().Format(time.RFC3339)
+   // Output: "2026-01-06T14:30:00Z"
+   ```
+
+3. **Partial Ordering:** Readings from the same meter are totally ordered by timestamp. Readings across different meters are partially ordered.
+
+**Limitations (as discussed in course):**
+
+> "Network delays outdate the server answer" - Synchronization lecture
+
+For high-precision applications, clock skew between meters and server could cause ordering issues. The current 5-second publishing interval provides sufficient tolerance.
+
+#### 5.5.2 Logical Clocks (Future Enhancement)
+
+**Course Concept:** Vector clocks provide a more detailed representation of causality than physical timestamps.
+
+**Potential Application in EnergyPulse:**
+
+If scaling to multiple API Gateway nodes processing meter readings concurrently, vector clocks would detect causality:
+
+```go
+// Vector Clock structure (from course)
+type VectorClock struct {
+    Clock map[string]int // Node ID → Event count
+}
+
+// Algorithm VectorClock (from lecture):
+// 1. Before event: VC[self]++
+// 2. On send: attach VC to message
+// 3. On receive: VC[k] = max(VC[k], received[k]) for all k
+```
+
+**Use Case:** Detecting concurrent predictions from different gateway nodes:
+- If `VC(pred1) < VC(pred2)`: pred1 happened before pred2
+- If neither `<` nor `>`: predictions are concurrent (potential conflict)
+
+#### 5.5.3 Leader Election (Future Enhancement)
+
+**Course Concept:** The Bully Algorithm elects the node with the highest ID as leader.
+
+**Potential Application:**
+
+If deploying multiple simulator nodes for load distribution, leader election would:
+1. Elect a master simulator to coordinate meter assignments
+2. Handle failover if the master crashes
+3. Prevent duplicate meter IDs across simulators
+
+**Bully Algorithm Summary (from course):**
+```
+1. Node P sends ELECTION to all nodes with higher IDs
+2. If no response → P becomes leader, broadcasts COORDINATOR
+3. If response → P waits for COORDINATOR from higher node
+4. On receiving ELECTION → respond OK, start own election
+```
 
 ### 5.6 Blockchain Systems (Syllabus Topic 4)
 
-- **Case Study Alignment:** Implements a simplified **Bitcoin-like** ledger:
-    - **SHA-256 Hashing**: Cryptographic linking of blocks.
-    - **Immutability**: Each block contains the hash of the previous block.
-    - **Proof of Authority**: Validated by the API Gateway node.
+**Course Alignment:** This implementation demonstrates concepts from the "Principles of Blockchain Systems" lecture.
+
+> [!IMPORTANT]
+> **Educational Simulation:** The blockchain in EnergyPulse is a **simulated implementation** designed to demonstrate core blockchain concepts without connecting to a real distributed network like Ethereum. The code explicitly states: *"In a real implementation, this would connect to Ethereum via go-ethereum. For the course project, we simulate the blockchain to demonstrate the concept."* This approach allows us to focus on understanding cryptographic chaining, hash pointers, and immutability without the complexity of real network deployment.
+
+#### 5.6.1 Blockchain Fundamentals Applied
+
+**Definition (from course):** "A blockchain system is a distributed system where mutually untrusted participants want to achieve a common goal... The integrity of the data stored in the ledger is ensured by cryptography."
+
+**EnergyPulse Blockchain Implementation (Simulated):**
+
+| Concept | Course Definition | EnergyPulse Implementation |
+|---------|-------------------|---------------------------|
+| Ledger | Distributed shared registry | SQLite `blockchain_transactions` table |
+| Block | Container for transactions | Energy prediction record with hash |
+| Hash Pointer | Links blocks cryptographically | `previous_hash` field (SHA-256) |
+| Immutability | Tamper-resistant via hashing | Chain verification endpoint |
+
+**Block Structure:**
+
+```go
+type Block struct {
+    ID           uint   `gorm:"primaryKey"`
+    Hash         string `gorm:"uniqueIndex"`
+    PreviousHash string
+    Data         string  // JSON: {house_id, prediction, timestamp}
+    Timestamp    int64
+}
+```
+
+**Hash Chain Construction (as shown in Bitcoin lecture):**
+
+```
+Block 0 (Genesis)     Block 1              Block 2
+┌──────────────┐     ┌──────────────┐     ┌──────────────┐
+│ PrevHash: 0  │◄────│ PrevHash:    │◄────│ PrevHash:    │
+│ Data: init   │     │ Hash(Block0) │     │ Hash(Block1) │
+│ Hash: H0     │     │ Data: pred1  │     │ Data: pred2  │
+└──────────────┘     │ Hash: H1     │     │ Hash: H2     │
+                     └──────────────┘     └──────────────┘
+```
+
+**Tamper Detection:**
+
+As explained in the course: "The hash stored in the hash pointer is the hash of the whole data of the previous block." This ensures any modification to historical data breaks the chain:
+
+```go
+// Verification: recalculate hash and compare
+func VerifyChain() bool {
+    blocks := getAllBlocks()
+    for i := 1; i < len(blocks); i++ {
+        expectedHash := sha256(blocks[i-1].PreviousHash + blocks[i-1].Data + blocks[i-1].Timestamp)
+        if blocks[i].PreviousHash != expectedHash {
+            return false // Tampering detected!
+        }
+    }
+    return true
+}
+```
+
+#### 5.6.2 Consensus Mechanism
+
+**Course Context:** The lectures distinguish between:
+- **Permissionless blockchains:** Open networks (e.g., Bitcoin with Proof of Work)
+- **Permissioned blockchains:** Controlled access with trusted validators
+
+**EnergyPulse Approach: Proof of Authority (PoA)**
+
+Since EnergyPulse operates in a centralized context (single API Gateway), it uses a simplified **Proof of Authority** model:
+
+- The API Gateway is the sole trusted validator
+- No consensus protocol needed (single node)
+- Blocks are appended immediately upon prediction generation
+
+**Production Enhancement:** For a multi-node deployment, the system would require:
+- **Byzantine Fault Tolerance (BFT)** for permissioned deployment
+- **Leader Election** (e.g., Bully Algorithm from course) to select block proposer
+- **Consensus Protocol** to ensure agreement among nodes
+
+#### 5.6.3 Limitations vs. Production Blockchain
+
+| Feature | Bitcoin/Ethereum | EnergyPulse |
+|---------|------------------|-------------|
+| Network | P2P distributed | Single node |
+| Consensus | PoW/PoS | PoA (trusted) |
+| Ledger Copies | All nodes | Single database |
+| Fork Resolution | Longest chain | N/A |
+| Smart Contracts | Supported | Not implemented |
+
+This simplified implementation serves educational purposes, demonstrating the core concept of cryptographic chaining for data integrity without the complexity of distributed consensus.
+
 ---
 
 ## 6. Use Case Scenarios
@@ -542,7 +803,7 @@ if err := json.Unmarshal(msg.Payload(), &reading); err != nil { ... }
    - Password: `SecurePass123!`
    - Confirm Password: `SecurePass123!`
 4. System validates input (email format, password strength)
-5. Backend hashes password using bcrypt (cost factor 14)
+5. Backend hashes password using bcrypt (cost factor 10)
 6. User record created in database with role "user"
 7. JWT token generated with 24-hour expiration
 8. Sarah is automatically logged in and redirected to dashboard
@@ -681,7 +942,7 @@ Dashboard Updates
 2. `internal/mqtt/subscriber.go:messageHandler()` - Receive message
 3. `internal/mqtt/subscriber.go:handleMeterReading()` - Process data
 4. `internal/repository/reading.go:CreateReading()` - Save to DB
-5. `internal/ml/model.go:PredictPrice()` - ML calculation
+5. `internal/ml/model.go:PredictPrice()` - Rule-based price calculation (decision tree)
 6. `internal/blockchain/client.go:LogPrediction()` - Hash transaction
 7. Frontend polls `GET /api/predictions/:id`
 8. `internal/handlers/prediction.go:GetPredictions()` - Return data
@@ -987,7 +1248,7 @@ func Register(c *gin.Context) {
 
 **Security Measures:**
 - Input validation (email format, password length)
-- Bcrypt password hashing (cost factor 14)
+- Bcrypt password hashing (cost factor 10)
 - SQL injection prevention (parameterized queries)
 - Error message sanitization (no user enumeration)
 - JWT with expiration
@@ -2096,6 +2357,22 @@ The EnergyPulse system could be adapted for real-world deployment with modificat
 This project provided valuable experience in making architectural decisions, troubleshooting distributed systems issues, and implementing secure, scalable software. The challenges faced (e.g., database concurrency, MQTT message ordering) deepened my understanding of the complexities involved in building production-grade distributed applications.
 
 The hybrid architecture combining event-driven (MQTT) and RESTful patterns proved effective for balancing real-time IoT data ingestion with traditional web application needs. The use of Docker Compose significantly simplified deployment and testing, demonstrating the value of containerization in modern software development.
+
+**Implementation Limitations (Honest Assessment):**
+
+For transparency, the following components are simulated or simplified for educational purposes:
+
+| Component | Implementation | Production Alternative |
+|-----------|----------------|------------------------|
+| **Blockchain** | Simulated local chain (no network) | Real Ethereum/Polygon via go-ethereum |
+| **Prediction Model** | Rule-based decision tree | Trained ML model (TensorFlow, PyTorch) |
+| **Smart Meters** | Simulated 20 meters via software | Real hardware (Modbus, Zigbee protocols) |
+| **Weather Data** | Real OpenMeteo API | Same (already production-ready) |
+| **Authentication** | Real JWT + bcrypt | Same (already production-ready) |
+| **MQTT** | Real Mosquitto broker | Same (already production-ready) |
+
+> [!NOTE]
+> These simplifications were intentional design decisions to focus on demonstrating distributed systems concepts (MQTT pub/sub, microservices, JWT auth, cryptographic hashing) rather than building production infrastructure. The core learning objectives—understanding message-oriented middleware, stateless authentication, and data integrity—are fully achieved with this approach.
 
 ---
 
