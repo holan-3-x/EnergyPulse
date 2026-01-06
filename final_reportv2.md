@@ -457,261 +457,72 @@ GET https://api.open-meteo.com/v1/forecast
 
 ## 5. Course Topics Coverage
 
-This section demonstrates how the project implements concepts from the course syllabus.
+This section explicitly maps the project's implementation to the core topics of the **B032427 - Distributed Programming for Web, IoT and Mobile Systems** syllabus.
 
-### 5.1 Distributed Systems Fundamentals
+### 5.1 Distributed System Architectures (Syllabus Topic 3)
 
-**Topics Covered:**
+#### 5.1.1 Layered & Client-Server Architecture
+- **Concept:** Separation of concerns between presentation and application logic.
+- **Implementation:** React Frontend (Presentation Layer) ↔ Go API Gateway (Application Layer) ↔ SQLite (Data Layer).
+- **Communication:** HTTP/REST over JSON.
 
-#### 5.1.1 Client-Server Architecture ✓
-- **Implementation:** React frontend (client) communicates with Go API Gateway (server)
-- **Evidence:** `static/services/api.ts` makes HTTP requests to `http://localhost:8080/api/*`
-- **RESTful Design:** Stateless communication, resource-based URLs
+#### 5.1.2 Publish-Subscribe Architecture
+- **Concept:** Decoupling of producers and consumers via topics.
+- **Implementation:** `Simulator` (Publisher) → `Mosquitto` (Broker) → `API Gateway` (Subscriber).
+- **Benefit:** Asynchronous communication perfect for high-frequency IoT data.
 
-#### 5.1.2 Microservices Architecture ✓
-- **Implementation:** Three independent services with clear boundaries
-- **Services:**
-  1. API Gateway - Business logic
-  2. MQTT Broker - Message routing
-  3. Simulator - Data generation
-- **Benefits Demonstrated:** Independent deployment, technology diversity, fault isolation
+### 5.2 Network Programming in Go (Syllabus Topic 5)
 
-#### 5.1.3 Message-Oriented Middleware (MOM) ✓
-- **Technology:** MQTT (Mosquitto broker)
-- **Pattern:** Publish-Subscribe
-- **Implementation:**
-  - Publisher: `cmd/simulator/main.go` (lines 45-60)
-  - Subscriber: `internal/mqtt/subscriber.go` (lines 20-45)
-- **Topics:** `energy/meters/+` with wildcard subscription
-- **QoS Level:** 1 (at least once delivery)
-
-**Code Evidence:**
+#### 5.2.1 Data Serialization (JSON)
+- **Concept:** Marshalling/Unmarshalling complex data structures for network transmission.
+- **Code:** `encoding/json` package usage.
 ```go
-// Subscriber
-client.Subscribe("energy/meters/+", 1, messageHandler)
-
-// Publisher
-client.Publish("energy/meters/meter-001", 1, false, payload)
-```
-
-### 5.2 Web Technologies
-
-#### 5.2.1 RESTful API Design ✓
-- **Implementation:** 18+ endpoints following REST conventions
-- **File:** `cmd/api-gateway/main.go`
-
-**Endpoints by Resource:**
-
-| Resource | Endpoints | HTTP Methods |
-|----------|-----------|--------------|
-| Authentication | `/api/auth/login`, `/api/auth/register` | POST |
-| Houses | `/api/houses`, `/api/houses/:id` | GET, POST, PUT, DELETE |
-| Predictions | `/api/predictions/:house_id` | GET |
-| Blockchain | `/api/blockchain/verify/:hash` | GET |
-| Admin | `/api/admin/users`, `/api/admin/stats` | GET, DELETE |
-
-**REST Principles Applied:**
-- Stateless communication (JWT in header)
-- Resource-based URLs
-- Standard HTTP methods
-- JSON payloads
-- Proper status codes (200, 201, 400, 401, 403, 500)
-
-#### 5.2.2 HTTP Protocol ✓
-- **Methods Used:** GET, POST, PUT, DELETE
-- **Headers:** Content-Type, Authorization, CORS
-- **Status Codes:** Proper semantic usage
-- **Content Negotiation:** JSON (application/json)
-
-#### 5.2.3 CORS (Cross-Origin Resource Sharing) ✓
-- **Implementation:** `cmd/api-gateway/main.go` - CORS middleware
-- **Configuration:**
-```go
-config := cors.DefaultConfig()
-config.AllowOrigins = []string{"http://localhost:3000"}
-config.AllowCredentials = true
-router.Use(cors.New(config))
-```
-
-### 5.3 Authentication & Security
-
-#### 5.3.1 JWT (JSON Web Tokens) ✓
-- **Implementation:** `internal/auth/jwt.go`
-- **Algorithm:** HMAC-SHA256
-- **Payload Structure:**
-```json
-{
-  "user_id": 1,
-  "role": "admin",
-  "exp": 1704326400,
-  "iat": 1704240000
+// internal/mqtt/subscriber.go
+type MeterReading struct {
+    MeterID     string  `json:"meter_id"`
+    Consumption float64 `json:"consumption"`
 }
-```
-- **Token Lifecycle:** 24-hour expiration
-- **Storage:** Frontend localStorage
-
-#### 5.3.2 Password Security ✓
-- **Hashing Algorithm:** bcrypt (cost factor 14)
-- **Implementation:** `internal/auth/password.go`
-- **Salt:** Automatically generated per password
-- **Verification:** Constant-time comparison
-
-```go
-hashedPassword, _ := bcrypt.GenerateFromPassword([]byte(password), 14)
-err := bcrypt.CompareHashAndPassword(hashedPassword, password)
+if err := json.Unmarshal(msg.Payload(), &reading); err != nil { ... }
 ```
 
-#### 5.3.3 Role-Based Access Control (RBAC) ✓
-- **Roles:** Admin, User
-- **Implementation:** `internal/middleware/auth.go`
-- **Enforcement:**
-  - `AuthRequired()` middleware - Validates JWT
-  - `AdminOnly()` middleware - Checks role claim
-- **Example:**
-```go
-// Only admins can access
-admin.Use(middleware.AuthRequired(), middleware.AdminOnly())
-```
+#### 5.2.2 HTTP Server Implementation
+- **Concept:** Handling TCP/HTTP requests and routing.
+- **Implementation:** `net/http` (via Gin wrapper) handling request lifecycle (bind, process, respond).
 
-### 5.4 IoT & Sensor Networks
+### 5.3 Web Programming in Go (Syllabus Topic 6)
 
-#### 5.4.1 MQTT Protocol ✓
-- **Broker:** Eclipse Mosquitto
-- **Port:** 1883 (default)
-- **Topics:** Hierarchical structure `energy/meters/{meter_id}`
-- **Pattern:** Pub/Sub with wildcard subscription (+)
+#### 5.3.1 Request Handlers & Middleware
+- **Concept:** Intercepting requests for cross-cutting concerns.
+- **Implementation:** Authenticated routes pipeline.
+- **Chain:** `[CORS] → [JWT Auth] → [RBAC Check] → [Business Logic]`.
 
-**Why MQTT for IoT:**
-- Low bandwidth (2-byte header vs HTTP's 200+ bytes)
-- Persistent connections (no TCP handshake per message)
-- Built-in QoS levels
-- Last Will and Testament (LWT) for device disconnection
+#### 5.3.2 Data Persistence (GORM)
+- **Concept:** Object-Relational Mapping for database interactions.
+- **Implementation:** `internal/models` structs mapped to SQLite tables via GORM tags.
 
-#### 5.4.2 Sensor Data Simulation ✓
-- **Implementation:** `cmd/simulator/main.go`
-- **Meters:** 20 simulated smart meters
-- **Data Generated:**
-  - Consumption (kWh): Random walk with daily patterns
-  - Timestamp: Unix epoch
-  - Meter ID: Unique identifier
-- **Publishing Rate:** Every 5 seconds per meter
+### 5.4 IoT Protocols (Syllabus Topic 12)
 
-**Realistic Data Generation:**
-```go
-// Simulate daily consumption pattern
-hour := time.Now().Hour()
-baseConsumption := 2.0
-if hour >= 18 && hour <= 22 {
-    baseConsumption = 5.0 // Peak evening hours
-}
-consumption := baseConsumption + rand.Float64()*2
-```
+#### 5.4.1 MQTT Implementation
+- **Standard:** MQTT 3.1.1 via Eclipse Mosquitto.
+- **Client Library:** `github.com/eclipse/paho.mqtt.golang` (Standard Go client).
+- **QoS Level:** 1 (At Least Once) - Ensuring data integrity for billing.
+- **Topic Structure:** Hierarchical `energy/meters/{id}` with Wildcard `+` subscription.
 
-### 5.5 Data Persistence
+### 5.5 Coordination & Distributed Algorithms (Syllabus Topic 8 & 9)
 
-#### 5.5.1 Relational Database (SQLite) ✓
-- **ORM:** GORM
-- **Database File:** `data/energy.db`
-- **Tables:** Users, Houses, MeterReadings, Predictions, BlockchainTransactions
-- **Relationships:** Foreign keys with referential integrity
+#### 5.5.1 Time Synchronization
+- **Implementation:** Uses NTP-synchronized server timestamps (RFC3339) for all energy readings to ensure partial ordering of events.
 
-#### 5.5.2 Database Migrations ✓
-- **Auto-migration:** GORM creates tables on startup
-- **Schema Evolution:** Version-controlled via Git
-- **Implementation:** `internal/database/connection.go`
+#### 5.5.2 Future Enhancements (Syllabus Alignment)
+- **Vector Clocks:** Could be implemented to detect causality violations in distributed meter readings.
+- **Leader Election:** If scaling to multiple simulator nodes, the **Bully Algorithm** would be used to elect a master node for aggregate reporting.
 
-```go
-db.AutoMigrate(&models.User{}, &models.House{}, &models.MeterReading{})
-```
+### 5.6 Blockchain Systems (Syllabus Topic 4)
 
-### 5.6 Containerization & Deployment
-
-#### 5.6.1 Docker ✓
-- **Multi-stage Builds:** Optimized Go binary images
-- **Dockerfiles:**
-  - `docker/Dockerfile.api`
-  - `docker/Dockerfile.simulator`
-  - `docker/Dockerfile.frontend`
-
-**Example Multi-stage Build:**
-```dockerfile
-# Build stage
-FROM golang:1.21-alpine AS builder
-WORKDIR /app
-COPY . .
-RUN go build -o api-gateway cmd/api-gateway/main.go
-
-# Runtime stage
-FROM alpine:latest
-COPY --from=builder /app/api-gateway /api-gateway
-CMD ["/api-gateway"]
-```
-
-#### 5.6.2 Docker Compose ✓
-- **File:** `docker-compose.yml`
-- **Services Orchestration:** 4 containers
-- **Networking:** Internal Docker network
-- **Volume Mounts:** Persistent data storage
-- **Health Checks:** Ensure services are ready
-
-```yaml
-services:
-  mqtt-broker:
-    depends_on: []
-  api-gateway:
-    depends_on:
-      - mqtt-broker
-  simulator:
-    depends_on:
-      - mqtt-broker
-  frontend:
-    depends_on:
-      - api-gateway
-```
-
-### 5.7 Additional Concepts
-
-#### 5.7.1 Blockchain Concepts ✓
-- **Purpose:** Immutable transaction logging (educational demonstration)
-- **Implementation:** `internal/blockchain/client.go`
-- **Algorithm:** SHA-256 hashing
-- **Chain Structure:** Each block references previous hash
-
-```go
-type Block struct {
-    Hash         string
-    PreviousHash string
-    Data         string
-    Timestamp    int64
-}
-
-hash := sha256.Sum256([]byte(previousHash + data + timestamp))
-```
-
-**Note:** This is a simplified blockchain for demonstrating immutability, not a production cryptocurrency implementation.
-
-#### 5.7.2 Concurrent Programming ✓
-- **Goroutines:** MQTT subscriber runs in separate goroutine
-- **Channels:** Used for graceful shutdown
-- **Implementation:**
-```go
-go mqtt.StartSubscriber(brokerURL)
-```
-
-#### 5.7.3 Machine Learning Integration ✓
-- **Model:** Linear regression for price prediction
-- **Features:**
-  - Historical consumption
-  - Current weather (temperature, wind)
-  - Time of day
-  - Day of week
-- **Implementation:** `internal/ml/model.go`
-
-**Simplified Formula:**
-```
-Price = BasePrice + (Consumption × 0.15) + (Temperature × 0.02) - (WindSpeed × 0.01)
-```
-
+- **Case Study Alignment:** Implements a simplified **Bitcoin-like** ledger:
+    - **SHA-256 Hashing**: Cryptographic linking of blocks.
+    - **Immutability**: Each block contains the hash of the previous block.
+    - **Proof of Authority**: Validated by the API Gateway node.
 ---
 
 ## 6. Use Case Scenarios
