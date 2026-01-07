@@ -1650,7 +1650,7 @@ docker-compose up --build
 **Step 5: Test with Demo Credentials**
 ```
 Email: admin@energypulse.com
-Password: admin123
+Password: password123
 ```
 
 ### 8.3 Manual Deployment (Without Docker)
@@ -2468,32 +2468,19 @@ See `docs/CORE_LOGIC.md` for detailed schema and relationships.
 
 See `docs/SYSTEM_FLOW.md` for MQTT communication patterns.
 
-### Appendix D: Code Statistics
 
-```
-Language                 Files        Lines        Code     Comments
-─────────────────────────────────────────────────────────────────────
-Go                          25         3,245       2,890          180
-TypeScript/React            18         2,567       2,340          150
-YAML (Docker)                4           245         230           10
-Markdown (Docs)              6           892         850           30
-SQL                          3           156         145            8
-─────────────────────────────────────────────────────────────────────
-Total                       56         7,105       6,455          378
-```
-
-### Appendix E: Demo Credentials
+### Appendix D: Demo Credentials
 
 **Admin Account:**
 ```
 Email: admin@energypulse.com
-Password: admin123
+Password: password123
 ```
 
 **Regular User:**
 ```
-Email: user@energypulse.com
-Password: user123
+Email: mario.rossi@email.it
+Password: password123
 ```
 
 ---
