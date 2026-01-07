@@ -2445,7 +2445,6 @@ For transparency, the following components are simulated or simplified for educa
 13. **Distributed Programming Course**
     - Università degli Studi di Firenze
     - Professor: Letterio Galletta
-    - Course Repository: [Available on university platform]
 
 ### Books & Articles
 
