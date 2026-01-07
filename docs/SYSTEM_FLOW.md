@@ -77,5 +77,5 @@ For this project, we use **Polling** (asking every few seconds). In a commercial
 | :--- | :--- | :--- |
 | **Login Logic** | `internal/handlers/auth.go` | Handles password checks & JWT generation. |
 | **API Routes** | `cmd/api-gateway/main.go` | Defines all URL endpoints (e.g., `/api/houses`). |
-| **MQTT Receiver** | `internal/mqtt/subscriber.go` | The function `messagePubHandler` processes incoming IoT messages. |
+| **MQTT Receiver** | `internal/mqtt/subscriber.go` | The function `handleMeterData` processes incoming IoT messages. |
 | **Frontend API** | `static/services/*.ts` | TypeScript files that define how to call the Backend. |

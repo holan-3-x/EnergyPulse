@@ -34,7 +34,7 @@ ARCHITECTURAL HIGHLIGHTS:
 FILE STRUCTURE
 ================================================================================
 
-dp-claude-fyp/
+energy-prediction/
 │
 ├── cmd/                         [Entry points]
 │   ├── api-gateway/main.go      [Core Backend Service - :8080]
@@ -51,14 +51,15 @@ dp-claude-fyp/
 │   └── weather/                 [Mock/API Data]
 │
 ├── static/                      [Frontend]
-│   ├── src/pages/               [React Views]
-│   ├── src/components/          [UI Widgets]
+│   ├── pages/                   [React Views]
+│   ├── components/              [UI Widgets]
+│   ├── services/                [API Logic]
 │   └── vite.config.ts           [Build Config]
 │
 ├── docker/                      [Container Configs]
-│   ├── api-gateway.Dockerfile
-│   ├── simulator.Dockerfile
-│   ├── frontend.Dockerfile
+│   ├── Dockerfile.api
+│   ├── Dockerfile.simulator
+│   ├── Dockerfile.frontend
 │   └── mosquitto.conf
 │
 ├── docs/                        [Documentation]
@@ -72,7 +73,7 @@ dp-claude-fyp/
 ├── docker-compose.yml           [Orchestration]
 ├── Makefile                     [Build Commands]
 ├── README.md                    [Setup Guide]
-└── final_reportv2.md            [Academic Report]
+└── final_report.md              [Academic Report]
 
 DATABASE SCHEMA
 ================================================================================

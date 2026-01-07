@@ -73,7 +73,7 @@ POST /auth/login
 Content-Type: application/json
 
 {
-  "username": "mario",
+  "email": "mario.rossi@email.it",
   "password": "password123"
 }
 ```

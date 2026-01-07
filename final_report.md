@@ -157,7 +157,7 @@ Repository Layer (Data Access)
 Database Layer (SQLite)
 ```
 
-**Example:** `internal/repository/user.go`, `internal/repository/house.go`
+**Example:** `internal/handlers/user.go`, `internal/handlers/households.go`
 
 This pattern provides:
 - Separation of concerns
@@ -205,10 +205,10 @@ energy/meters/+
 
 ```
 1. User fills registration form → React Frontend
-2. POST /api/auth/register → API Gateway
+2. POST /auth/register → API Gateway
 3. Handler validates input → internal/handlers/auth.go
 4. Hash password (bcrypt) → internal/auth/password.go
-5. Create user record → internal/repository/user.go
+5. Create user record → internal/handlers/user.go
 6. Insert to database → SQLite
 7. Generate JWT token → internal/auth/jwt.go
 8. Return token + user data → Frontend
@@ -312,7 +312,7 @@ CREATE TABLE blockchain_log (
 #### Authentication Flow:
 
 ```
-1. User Login → Credentials sent to /api/auth/login
+1. User Login → Credentials sent to /auth/login
 2. Password verification → bcrypt.CompareHashAndPassword()
 3. JWT generation → jwt.NewWithClaims()
    - Payload: {user_id, role, exp, iat}
@@ -729,7 +729,7 @@ If deploying multiple simulator nodes for load distribution, leader election wou
 
 | Concept | Course Definition | EnergyPulse Implementation |
 |---------|-------------------|---------------------------|
-| Ledger | Distributed shared registry | SQLite `blockchain_transactions` table |
+| Ledger | Distributed shared registry | SQLite `blockchain_log` table |
 | Block | Container for transactions | Energy prediction record with hash |
 | Hash Pointer | Links blocks cryptographically | `previous_hash` field (SHA-256) |
 | Immutability | Tamper-resistant via hashing | Chain verification endpoint |
@@ -848,7 +848,7 @@ This simplified implementation serves educational purposes, demonstrating the co
 **System Interactions:**
 
 ```
-Frontend → POST /api/auth/register
+Frontend → POST /auth/register
           ↓
 API validates & hashes password
           ↓
@@ -869,10 +869,10 @@ Dashboard updates
 
 **Code Trace:**
 
-1. `static/components/Auth/Register.tsx` - Form submission
+1. `static/pages/Register.tsx` - Form submission
 2. `static/services/auth.ts` - API call
 3. `internal/handlers/auth.go:Register()` - Handler
-4. `internal/repository/user.go:CreateUser()` - Database
+4. `internal/handlers/user.go:CreateUser()` - Database
 5. `internal/auth/jwt.go:GenerateToken()` - Token creation
 6. Response returned to frontend
 
@@ -964,11 +964,11 @@ Dashboard Updates
 1. `cmd/simulator/main.go:publishReading()` - Publish to MQTT
 2. `internal/mqtt/subscriber.go:messageHandler()` - Receive message
 3. `internal/mqtt/subscriber.go:handleMeterReading()` - Process data
-4. `internal/repository/reading.go:CreateReading()` - Save to DB
+4. `internal/handlers/predictions.go:CreateReading()` - Save to DB
 5. `internal/ml/model.go:PredictPrice()` - Rule-based price calculation (decision tree)
 6. `internal/blockchain/client.go:LogPrediction()` - Hash transaction
 7. Frontend polls `GET /api/predictions/:id`
-8. `internal/handlers/prediction.go:GetPredictions()` - Return data
+8. `internal/handlers/predictions.go:GetPredictions()` - Return data
 
 ---
 
@@ -995,24 +995,22 @@ Dashboard Updates
    - ID | Email | Role | Houses | Created Date | Actions
 7. Identifies problematic user (suspicious activity)
 8. Clicks "View Details" for user ID 23
-9. Sees user's houses and consumption history
-10. Decides to delete user
-11. Clicks "Delete User" button
-12. Confirmation modal appears
-13. Alex confirms deletion
-14. System performs cascade delete:
-    - User record removed
-    - Associated houses removed
-    - Meter readings archived (for audit trail)
-    - Predictions archived
-15. User list updates, showing user removed
-16. Audit log entry created
+9. Sees user list and identifies account to promote
+10. Decides to change user role
+11. Clicks "Change Role" button for user ID 23
+12. Selects "Admin" from the dropdown
+13. Alex confirms change
+14. System performs update:
+    - User record "role" field updated to "admin"
+    - Session invalidated (if required)
+15. User list updates, showing user 23 as Admin
+16. Administrative action logged
 
 **Postconditions:**
-- User account deleted
-- Related data cleaned up
+- User role updated in database
+- New permissions active for the user
 - Audit trail maintained
-- Admin notified of successful deletion
+- Changes reflected in Admin dashboard immediately
 
 **Authorization Flow:**
 
@@ -1038,7 +1036,7 @@ Response: 200 OK
 
 **Code Trace:**
 
-1. `static/pages/Admin.tsx` - Admin dashboard
+1. `static/pages/AdminDash.tsx` - Admin dashboard
 2. `static/services/admin.ts:deleteUser()` - API call with JWT
 3. `cmd/api-gateway/main.go` - Route with middleware chain:
    ```go
@@ -1047,10 +1045,10 @@ Response: 200 OK
        middleware.AdminOnly(),
        handlers.DeleteUser)
    ```
-4. `internal/middleware/auth.go:AuthRequired()` - JWT validation
-5. `internal/middleware/auth.go:AdminOnly()` - Role check
+4. `internal/auth/middleware.go:AuthRequired()` - JWT validation
+5. `internal/auth/middleware.go:AdminOnly()` - Role check
 6. `internal/handlers/admin.go:DeleteUser()` - Business logic
-7. `internal/repository/user.go:DeleteUser()` - Database operation
+7. `internal/handlers/user.go:DeleteUser()` - Database operation
 
 **RBAC Enforcement:**
 
@@ -1080,37 +1078,36 @@ Response: {"error": "Admin access required"}
 ```
 cmd/
 ├── api-gateway/
-│   └── main.go              # Entry point for API server
+│   └── main.go              # Entry point for API server & Route definitions
 └── simulator/
     └── main.go              # Entry point for MQTT simulator
 
 internal/
 ├── auth/
 │   ├── jwt.go               # JWT token generation & validation
+│   ├── middleware.go        # JWT & RBAC middleware
 │   └── password.go          # Password hashing (bcrypt)
 ├── blockchain/
 │   └── client.go            # Blockchain implementation
 ├── database/
-│   └── connection.go        # Database initialization
+│   ├── connection.go        # Database initialization & GORM setup
+│   └── seeds.go             # Initial data seeding
 ├── handlers/
+│   ├── admin.go             # Admin panel handlers
 │   ├── auth.go              # Authentication handlers
-│   ├── house.go             # House management handlers
-│   ├── prediction.go        # Prediction handlers
-│   └── admin.go             # Admin handlers
-├── middleware/
-│   └── auth.go              # JWT & RBAC middleware
+│   ├── blockchain.go        # Ledger verification handlers
+│   ├── households.go        # House management handlers
+│   ├── predictions.go       # Prediction handlers
+│   ├── user.go              # User profile handlers
+│   └── weather.go           # Weather API handlers
+├── ml/
+│   └── model.go             # Rule-based pricing logic
 ├── models/
-│   ├── user.go              # User model
-│   ├── house.go             # House model
-│   └── reading.go           # Meter reading model
-├── mqtt/
-│   └── subscriber.go        # MQTT subscriber
-├── repository/
-│   ├── user.go              # User database operations
-│   ├── house.go             # House database operations
-│   └── reading.go           # Reading database operations
-└── routes/
-    └── main.go              # Route definitions
+│   ├── household.go         # House model
+│   ├── prediction.go        # Prediction & Reading model
+│   └── user.go              # User model
+└── mqtt/
+    └── subscriber.go        # MQTT subscriber & processing pipeline
 ```
 
 #### 7.1.2 Main Entry Point Analysis
@@ -1122,45 +1119,61 @@ package main
 
 import (
     "log"
+    "os"
+
     "github.com/gin-gonic/gin"
-    "energypulse/internal/database"
-    "energypulse/cmd/api-gateway"
-    "energypulse/internal/mqtt"
+    "github.com/gin-contrib/cors" // Added CORS import
+    "energy-prediction/internal/auth"
+    "energy-prediction/internal/database"
+    "energy-prediction/internal/handlers"
+    "energy-prediction/internal/mqtt"
 )
 
 func main() {
-    // 1. Initialize database connection
-    db, err := database.Connect("data/energy.db")
-    if err != nil {
-        log.Fatal("Failed to connect to database:", err)
-    }
-    defer db.Close()
+    // 1. Initialize auth and database
+    auth.Init()
+    database.Connect(os.Getenv("DB_PATH"))
     
-    // 2. Run database migrations
-    database.Migrate(db)
+    // 2. Automigrate and Seed demo data
+    database.AutoMigrate()
+    database.SeedDummyData()
     
-    // 3. Start MQTT subscriber in background goroutine
-    go mqtt.StartSubscriber("tcp://localhost:1883")
+    // 3. Start MQTT subscriber
+    mqttClient, _ := mqtt.NewSubscriber()
     
-    // 4. Initialize Gin router
+    // 4. Create router with CORS
     router := gin.Default()
+    router.Use(cors.New(cors.Config{
+        AllowOrigins:     []string{"*"},
+        AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
+        AllowHeaders:     []string{"Origin", "Content-Type", "Authorization"},
+        AllowCredentials: true,
+    }))
     
-    // 5. Setup routes
-    routes.SetupRoutes(router, db)
-    
-    // 6. Start HTTP server
-    log.Println("API Gateway starting on :8080")
+    // Public Routes
+    router.POST("/auth/register", handlers.Register)
+    router.POST("/auth/login", handlers.Login)
+
+    // Protected Routes
+    api := router.Group("/api")
+    api.Use(auth.JWTMiddleware())
+    {
+        api.GET("/houses", handlers.GetHouses)
+        api.GET("/predictions", handlers.GetPredictions)
+    }
+
+    // 6. Start Server
     router.Run(":8080")
 }
 ```
 
 **Key Steps Explained:**
 
-1. **Database Initialization:** Establishes SQLite connection
-2. **Schema Migration:** Creates tables if they don't exist
-3. **MQTT Subscriber:** Starts listening for meter readings (asynchronous)
-4. **Router Setup:** Configures HTTP routes and middleware
-5. **Server Start:** Listens on port 8080
+1.  **Database Initialization:** Establishes SQLite connection
+2.  **Schema Migration:** Creates tables if they don't exist
+3.  **MQTT Subscriber:** Starts listening for meter readings (asynchronous)
+4.  **Router Setup:** Configures HTTP routes and middleware
+5.  **Server Start:** Listens on port 8080
 
 #### 7.1.3 Authentication Handler Deep Dive
 
@@ -1172,9 +1185,9 @@ package handlers
 import (
     "net/http"
     "github.com/gin-gonic/gin"
-    "energypulse/internal/auth"
-    "energypulse/internal/repository"
-    "energypulse/internal/models"
+    "energy-prediction/internal/auth"
+    "energy-prediction/internal/database"
+    "energy-prediction/internal/models"
 )
 
 // Login handles user authentication
@@ -1287,14 +1300,14 @@ import (
     "encoding/json"
     "log"
     MQTT "github.com/eclipse/paho.mqtt.golang"
-    "energypulse/internal/repository"
-    "energypulse/internal/ml"
+    "energy-prediction/internal/database"
+    "energy-prediction/internal/ml"
 )
 
 type MeterReading struct {
     MeterID     string  `json:"meter_id"`
     Consumption float64 `json:"consumption"`
-    Timestamp   int64   `json:"timestamp"`
+    Timestamp   int64 `json:"timestamp"`
 }
 
 // Message handler called when MQTT message arrives
@@ -1396,24 +1409,27 @@ func StartSubscriber(brokerURL string) {
 ```
 static/
 ├── components/
-│   ├── Auth/
-│   │   ├── Login.tsx        # Login form
-│   │   └── Register.tsx     # Registration form
-│   ├── Dashboard/
-│   │   ├── HouseCard.tsx    # House display component
-│   │   └── Stats.tsx        # Statistics component
-│   └── Common/
-│       ├── Navbar.tsx       # Navigation bar
-│       └── ProtectedRoute.tsx # Auth guard
-├── services/
-│   ├── api.ts               # Axios instance with interceptors
-│   ├── auth.ts              # Auth API calls
-│   └── houses.ts            # House API calls
+│   └── WeatherWidget.tsx    # Shared UI component
 ├── pages/
-│   ├── Dashboard.tsx        # Main dashboard page
-│   ├── HouseDetails.tsx     # Individual house page
-│   └── Admin.tsx            # Admin panel
-└── App.tsx                  # Root component with routing
+│   ├── Landing.tsx          # Public entry page
+│   ├── Login.tsx            # Authentication view
+│   ├── Register.tsx         # User registration
+│   ├── Dashboard.tsx        # User overview & chart
+│   ├── Houses.tsx           # House list management
+│   ├── HouseDetails.tsx     # Single house view
+│   ├── Predictions.tsx      # History logs
+│   ├── BlockchainLedger.tsx # Ledger verification
+│   ├── Profile.tsx          # User settings
+│   └── AdminDash.tsx        # Admin system overview
+├── services/
+│   ├── api.ts               # Axios configuration
+│   ├── auth.ts              # Login/Register API calls
+│   ├── houses.ts            # Household management
+│   ├── predictions.ts       # Energy data fetching
+│   └── blockchain.ts        # Ledger verification calls
+├── App.tsx                  # Main router & app entry
+├── types.ts                 # TypeScript interfaces
+└── vite.config.ts           # Build configuration
 ```
 
 #### 7.2.2 API Service Setup
@@ -1423,11 +1439,12 @@ static/
 ```typescript
 import axios from 'axios';
 
-const API_BASE_URL = 'http://localhost:8080/api';
+const API_URL = import.meta.env.VITE_API_URL || 
+  `${window.location.protocol}//${window.location.hostname}:8080`;
 
 // Create axios instance
 const api = axios.create({
-  baseURL: API_BASE_URL,
+  baseURL: API_URL,
   headers: {
     'Content-Type': 'application/json',
   },
@@ -1472,37 +1489,26 @@ export default api;
 
 #### 7.2.3 Protected Route Component
 
-**File: `static/components/Common/ProtectedRoute.tsx`**
+**File: `static/App.tsx` (Internal Component)**
 
 ```typescript
-import { Navigate } from 'react-router-dom';
-
-interface ProtectedRouteProps {
-  children: React.ReactNode;
-  adminOnly?: boolean;
-}
-
-export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ 
+const PrivateRoute: React.FC<{ children: React.ReactNode; role?: UserRole }> = ({ 
   children, 
-  adminOnly = false 
+  role 
 }) => {
-  const token = localStorage.getItem('token');
-  const userStr = localStorage.getItem('user');
+  const { user } = useAuth();
   
   // Not logged in
-  if (!token) {
-    return <Navigate to="/login" />;
+  if (!user) {
+    return <Navigate to="/login" replace />;
   }
   
-  // Admin-only route but user is not admin
-  if (adminOnly && userStr) {
-    const user = JSON.parse(userStr);
-    if (user.role !== 'admin') {
-      return <Navigate to="/dashboard" />;
-    }
+  // Role check
+  if (role && user.role !== role) {
+    return <Navigate to="/dashboard" replace />;
   }
   
-  return <>{children}</>;
+  return <Layout>{children}</Layout>;
 };
 ```
 
@@ -1626,37 +1632,21 @@ git clone https://github.com/yourusername/energypulse.git
 cd energypulse
 ```
 
-**Step 2: Configure Environment Variables**
-```bash
-cp .env.example .env
-# Edit .env with your settings
-```
+**Step 2: Build and Start Services**
 
-**Example `.env` file:**
-```bash
-# Database
-DB_PATH=data/energy.db
+The system is pre-configured with sensible defaults for local execution. No manual configuration is required for the initial setup.
 
-# JWT Secret (change in production!)
-JWT_SECRET=your-super-secret-key-change-this-in-production
+> [!NOTE]
+> Detailed configuration options (Ports, DB Paths, Secret Keys) are documented in **Appendix F: System Configuration** of this report.
 
-# MQTT Broker
-MQTT_BROKER=tcp://mqtt-broker:1883
-MQTT_TOPIC=energy/meters/+
-
-# API Server
-API_PORT=8080
-
-# Weather API (optional)
-WEATHER_API_KEY=your-openmeteo-key
-```
-
-**Step 3: Build and Start Services**
 ```bash
 docker-compose up --build
 ```
 
-**Expected Output:**
+**Step 3: Access the Dashboard**
+Once the build is complete and containers are running:
+- **Frontend:** http://localhost:3000
+- **API Health:** http://localhost:8080/health
 ```
 [+] Running 4/4
  ✔ Container energypulse-mqtt-broker-1  Started
@@ -1731,59 +1721,60 @@ npm run dev
 version: '3.8'
 
 services:
-  mqtt-broker:
-    image: eclipse-mosquitto:2.0
+  mqtt:
+    image: eclipse-mosquitto:latest
     container_name: energypulse-mqtt
     ports:
       - "1883:1883"
       - "9001:9001"
     volumes:
-      - ./docker/mosquitto/mosquitto.conf:/mosquitto/config/mosquitto.conf
+      - ./docker/mosquitto.conf:/mosquitto/config/mosquitto.conf
     networks:
       - energypulse-network
 
-  api-gateway:
+  api:
     build:
       context: .
-      dockerfile: docker/api-gateway.Dockerfile
+      dockerfile: docker/Dockerfile.api
     container_name: energypulse-api
     ports:
       - "8080:8080"
     environment:
-      - DB_PATH=/data/energy.db
-      - JWT_SECRET=${JWT_SECRET}
-      - MQTT_BROKER=tcp://mqtt-broker:1883
+      - PORT=8080
+      - DB_PATH=/app/data/energy.db
+      - MQTT_BROKER=tcp://mqtt:1883
+      - JWT_SECRET=energy-prediction-secret-key-2024
     volumes:
-      - ./data:/data
+      - ./data:/app/data
     depends_on:
-      - mqtt-broker
+      - mqtt
     networks:
       - energypulse-network
 
   simulator:
     build:
       context: .
-      dockerfile: docker/simulator.Dockerfile
+      dockerfile: docker/Dockerfile.simulator
     container_name: energypulse-simulator
     environment:
-      - MQTT_BROKER=tcp://mqtt-broker:1883
-      - NUM_METERS=20
+      - MQTT_BROKER=tcp://mqtt:1883
     depends_on:
-      - mqtt-broker
+      - mqtt
+      - api
     networks:
       - energypulse-network
 
   frontend:
     build:
-      context: ./static
-      dockerfile: ../docker/frontend.Dockerfile
+      context: .
+      dockerfile: docker/Dockerfile.frontend
     container_name: energypulse-frontend
     ports:
       - "3000:3000"
     environment:
       - VITE_API_URL=http://localhost:8080
     depends_on:
-      - api-gateway
+      - api
     networks:
       - energypulse-network
 
@@ -1836,7 +1827,7 @@ open http://localhost:3000
 | Port 8080 already in use | Another service using port | `lsof -i :8080`, kill process |
 | MQTT connection refused | Broker not started | Check `docker-compose logs mqtt-broker` |
 | Frontend can't reach API | CORS misconfiguration | Verify CORS settings in cmd/api-gateway/main.go |
-| JWT token invalid | Wrong secret key | Match JWT_SECRET in .env and code |
+| JWT token invalid | Wrong secret key | Verify JWT_SECRET in environment/Compose |
 | Database locked | Multiple instances | Stop all containers, restart |
 
 **Common Commands:**
@@ -1955,7 +1946,7 @@ func TestUserRegistration(t *testing.T) {
     
     body, _ := json.Marshal(payload)
     resp, err := http.Post(
-        "http://localhost:8080/api/auth/register",
+        "http://localhost:8080/auth/register",
         "application/json",
         bytes.NewBuffer(body),
     )
@@ -2012,7 +2003,7 @@ mosquitto_pub -h localhost \
 
 **Register User:**
 ```bash
-curl -X POST http://localhost:8080/api/auth/register \
+curl -X POST http://localhost:8080/auth/register \
   -H "Content-Type: application/json" \
   -d '{
     "email": "john@example.com",
@@ -2022,7 +2013,7 @@ curl -X POST http://localhost:8080/api/auth/register \
 
 **Login:**
 ```bash
-curl -X POST http://localhost:8080/api/auth/login \
+curl -X POST http://localhost:8080/auth/login \
   -H "Content-Type: application/json" \
   -d '{
     "email": "john@example.com",
@@ -2055,7 +2046,7 @@ curl -X POST http://localhost:8080/api/houses \
 
 ```typescript
 import { render, screen, fireEvent } from '@testing-library/react';
-import { Login } from '../components/Auth/Login';
+import Login from '../pages/Login';
 
 test('renders login form', () => {
   render(<Login />);
@@ -2091,7 +2082,7 @@ npm test
 ab -n 1000 -c 10 \
   -p login.json \
   -T application/json \
-  http://localhost:8080/api/auth/login
+  http://localhost:8080/auth/login
 ```
 
 **login.json:**
@@ -2176,7 +2167,7 @@ Users were logged out after 24 hours with no graceful token refresh mechanism.
 **Solution:**
 - Frontend checks token expiration on every API call
 - If token expires in <1 hour, automatically requests refresh
-- Backend provides `/api/auth/refresh` endpoint
+- Backend provides `/auth/refresh` endpoint
 
 ```typescript
 // Token refresh logic
@@ -2505,6 +2496,31 @@ Password: password123
 Email: mario.rossi@email.it
 Password: password123
 ```
+
+### Appendix E: Project Statistics
+
+The EnergyPulse system is a comprehensive implementation consisting of over **10,000 lines of original code** (excluding auto-generated files and dependencies).
+
+| Component | File Count | Line Count (Approx.) | Key Technologies |
+| :--- | :--- | :--- | :--- |
+| **Backend Service** | 22 | 3,400 | Go, Gin, GORM, MQTT |
+| **Frontend Web App** | 26 | 3,700 | React, TypeScript, Recharts |
+| **Documentation** | 8 | 3,800 | Markdown, Mermaid |
+| **Infrastructure** | 6 | 300 | Docker, SQL Seeds |
+| **Total** | **62** | **11,200** | |
+
+### Appendix F: System Configuration
+
+The system uses environment variables for configuration. When running via Docker Compose, these are pre-configured with the following defaults:
+
+| Variable | Default Value | Description |
+| :--- | :--- | :--- |
+| `PORT` | `8080` | Port for the API Gateway. |
+| `DB_PATH` | `/app/data/energy.db` | Path to the SQLite database file. |
+| `JWT_SECRET` | `energy-prediction-secret-key-2024` | Secret key for JWT signing. |
+| `MQTT_BROKER` | `tcp://mqtt:1883` | URI of the MQTT broker. |
+| `MQTT_TOPIC` | `energy/meters/+` | Topic pattern for meter data. |
+| `VITE_API_URL` | `http://localhost:8080` | Backend URL for the Frontend. |
 
 ---
 
