@@ -52,7 +52,7 @@ This bypasses the frontend entirely. It is **asynchronous**.
 5.  **Processing (The "Business Logic")**:
     *   **Store**: The backend saves the raw reading to the `predictions` table in SQLite.
     *   **Calculate**: It runs the pricing algorithm based on the current hour and simulated temperature.
-    *   **Audit**: It generates a SHA-256 hash of the data and logs it to the `blockchain_logs` table.
+    *   **Audit**: It generates a SHA-256 hash of the data and logs it to the `blockchain_log` table.
 
 ---
 

@@ -80,7 +80,7 @@ DATABASE SCHEMA
 1. users (authentication & profile)
 2. households (properties owned by users)
 3. predictions (energy readings + price analysis)
-4. blockchain_logs (immutable audit trail)
+4. blockchain_log (immutable audit trail)
 5. sqlite_sequence (internal)
 
 API ENDPOINTS SUMMARY

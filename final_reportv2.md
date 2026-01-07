@@ -233,54 +233,77 @@ energy/meters/+
 
 ### 3.5 Database Schema
 
+The system uses **SQLite 3** managed by the **GORM** ORM. This allows for a structured relational model while maintaining the lightweight portability required for a distributed system prototype.
+
 ```sql
--- Users Table
+-- Users Table: Stores account and authentication data
 CREATE TABLE users (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
+    username TEXT UNIQUE NOT NULL,
+    password_hash TEXT NOT NULL,
     email TEXT UNIQUE NOT NULL,
-    password TEXT NOT NULL,
+    first_name TEXT NOT NULL,
+    last_name TEXT NOT NULL,
+    phone TEXT,
+    avatar_url TEXT,
     role TEXT DEFAULT 'user',
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    created_at DATETIME,
+    updated_at DATETIME
 );
 
--- Houses Table
-CREATE TABLE houses (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
+-- Households Table: Stores metadata about managed buildings
+CREATE TABLE households (
+    id TEXT PRIMARY KEY, -- Primary Key is a string (e.g., house_001)
     user_id INTEGER NOT NULL,
+    house_name TEXT NOT NULL,
     address TEXT NOT NULL,
     city TEXT NOT NULL,
-    latitude REAL NOT NULL,
-    longitude REAL NOT NULL,
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    region TEXT,
+    country TEXT NOT NULL,
+    household_members INTEGER DEFAULT 1,
+    heating_type TEXT,
+    area_sqm REAL,
+    year_built INTEGER,
+    meter_id TEXT UNIQUE NOT NULL, -- Links to physical IoT device
+    status TEXT DEFAULT 'active',
+    created_at DATETIME,
+    updated_at DATETIME,
     FOREIGN KEY (user_id) REFERENCES users(id)
 );
 
--- Meter Readings Table
-CREATE TABLE meter_readings (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    house_id INTEGER NOT NULL,
-    consumption REAL NOT NULL,
-    timestamp INTEGER NOT NULL,
-    FOREIGN KEY (house_id) REFERENCES houses(id)
-);
-
--- Predictions Table
+-- Predictions Table: Stores historical IoT data and model outputs
+-- This table consolidates meter readings and prediction results
 CREATE TABLE predictions (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
-    house_id INTEGER NOT NULL,
+    user_id INTEGER NOT NULL,
+    house_id TEXT NOT NULL,
+    meter_id TEXT NOT NULL,
+    timestamp DATETIME NOT NULL,
+    hour INTEGER NOT NULL,
+    temperature REAL NOT NULL,
+    consumption_kwh REAL NOT NULL,
     predicted_price REAL NOT NULL,
-    weather_temp REAL,
-    timestamp INTEGER NOT NULL,
-    FOREIGN KEY (house_id) REFERENCES houses(id)
+    actual_price REAL, -- Simulated real market price for comparison
+    confidence INTEGER NOT NULL,
+    blockchain_tx TEXT, -- Transaction hash from simulated ledger
+    blockchain_confirmed BOOLEAN DEFAULT 0,
+    created_at DATETIME,
+    FOREIGN KEY (user_id) REFERENCES users(id),
+    FOREIGN KEY (house_id) REFERENCES households(id)
 );
 
--- Blockchain Transactions Table
-CREATE TABLE blockchain_transactions (
+-- Blockchain Log Table: Audit trail for prediction integrity
+CREATE TABLE blockchain_log (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
+    prediction_id INTEGER NOT NULL,
     transaction_hash TEXT UNIQUE NOT NULL,
-    previous_hash TEXT NOT NULL,
-    data TEXT NOT NULL,
-    timestamp INTEGER NOT NULL
+    block_number INTEGER,
+    gas_used INTEGER,
+    status TEXT,
+    contract_address TEXT,
+    logged_at DATETIME,
+    confirmed_at DATETIME,
+    FOREIGN KEY (prediction_id) REFERENCES predictions(id)
 );
 ```
 

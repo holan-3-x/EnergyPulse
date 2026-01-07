@@ -63,43 +63,64 @@ The system uses **SQLite** with **GORM** (Go Object Relational Mapper).
 
 ```mermaid
 erDiagram
-    User ||--o{ House : owns
+    User ||--o{ Household : owns
     User ||--o{ Prediction : requests
-    House ||--o{ Prediction : generates
+    Household ||--o{ Prediction : generates
     Prediction ||--|| BlockchainLog : "is verified by"
 
     User {
-        uintID id
+        uint id
+        string username
         string email
+        string first_name
+        string last_name
         string role "admin/user"
     }
 
-    House {
-        string ID "house_001"
-        string MeterID "household_1"
-        float AreaSqm
-        string HeatingType
+    Household {
+        string id "house_001"
+        uint user_id
+        string house_name
+        string meter_id "household_1"
+        int household_members
+        string heating_type
+        float area_sqm
+        int year_built
     }
 
     Prediction {
-        uint ID
-        float PredictedPrice
-        float ActualPrice
-        bool BlockchainConfirmed
+        uint id
+        uint user_id
+        string house_id
+        string meter_id
+        datetime timestamp
+        int hour
+        float temperature
+        float consumption_kwh
+        float predicted_price
+        float actual_price
+        int confidence
+        string blockchain_tx
+        bool blockchain_confirmed
     }
 
     BlockchainLog {
-        string TxHash
-        uint64 BlockNumber
-        string ContractAddress
+        uint id
+        uint prediction_id
+        string transaction_hash
+        uint64 block_number
+        uint64 gas_used
+        string status
+        string contract_address
     }
 ```
 
 ### Key Design Decisions
 *   **MeterID vs HouseID**:
-    *   `HouseID` (e.g., `house_001`) is the physical building managed by the user.
-    *   `MeterID` (e.g., `household_1`) is the IoT device ID. The Simulator *only* knows the MeterID.
-*   **Soft Deletes**: Deleting a house doesn't remove it from the DB, only marks `deleted_at`, preserving historical energy data.
+    *   `house_id` (e.g., `house_001`) is the internal primary key for the physical building managed by the user.
+    *   `meter_id` (e.g., `household_1`) is the IoT device ID reported by the sensors.
+*   **Consolidated Data**: To reduce join overhead, the `predictions` table stores all sensory data (`consumption_kwh`, `temperature`) alongside the model results.
+*   **Soft Deletes**: Deleting a house doesn't remove it from the DB, only marks it as `archived` in the `status` field, preserving historical energy data.
 
 ---
 
